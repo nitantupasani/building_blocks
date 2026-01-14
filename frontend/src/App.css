@@ -29,6 +29,13 @@ body {
   background: #ffffff;
 }
 
+.app__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
 .app__header h1 {
   margin: 0 0 8px;
   font-size: 24px;
@@ -37,6 +44,30 @@ body {
 .app__header p {
   margin: 0;
   color: #475569;
+}
+
+.app__add-button {
+  border: none;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #ffffff;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.app__add-button:hover {
+  background: #1d4ed8;
+  box-shadow: 0 10px 18px rgba(37, 99, 235, 0.25);
+  transform: translateY(-1px);
+}
+
+.app__add-button:active {
+  background: #1e40af;
+  transform: translateY(0);
 }
 
 .app__canvas {
