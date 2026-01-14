@@ -14,7 +14,8 @@ import "reactflow/dist/style.css";
 import BuildingNode from "./nodes/BuildingNode.jsx";
 import "./App.css";
 
-const DEFAULT_NODE_SIZE = { width: 140, height: 90 };
+const DEFAULT_NODE_SIZE = { width: 150, height: 100 };
+const NEW_BLOCK_SIZE = { width: 150, height: 100 };
 
 const initialNodes = [
   {
@@ -36,9 +37,9 @@ const rectsOverlap = (a, b) =>
   a.y < b.y + b.h &&
   a.y + a.h > b.y;
 
-const findNonOverlappingTopLeft = (desiredTopLeft, existingNodes) => {
-  const W = DEFAULT_NODE_SIZE.width;
-  const H = DEFAULT_NODE_SIZE.height;
+const findNonOverlappingTopLeft = (desiredTopLeft, size, existingNodes) => {
+  const W = size.width;
+  const H = size.height;
   const padding = 24;
 
   const occupied = existingNodes.map((n) => ({
@@ -82,12 +83,14 @@ const findNonOverlappingTopLeft = (desiredTopLeft, existingNodes) => {
 function FlowCanvas() {
   const reactFlow = useReactFlow();
   const idRef = useRef(2);
+  const blockCountRef = useRef(1);
   const wrapperRef = useRef(null);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   const [editingNodeId, setEditingNodeId] = useState(null);
+  const [contextMenu, setContextMenu] = useState(null);
 
   const nodeTypesMemo = useMemo(() => nodeTypes, []);
 
@@ -114,33 +117,52 @@ function FlowCanvas() {
     setEditingNodeId(null);
   }, []);
 
+  const closeContextMenu = useCallback(() => {
+    setContextMenu(null);
+  }, []);
+
+  const deleteNode = useCallback(
+    (nodeId) => {
+      setNodes((prev) => prev.filter((node) => node.id !== nodeId));
+      setEdges((prev) =>
+        prev.filter((edge) => edge.source !== nodeId && edge.target !== nodeId)
+      );
+      setEditingNodeId((prev) => (prev === nodeId ? null : prev));
+      closeContextMenu();
+    },
+    [closeContextMenu, setEdges, setNodes]
+  );
+
   const createNodeAtPosition = useCallback(
     (position) => {
       const blockNumber = idRef.current;
       const id = String(idRef.current++);
+      const nextBlockNumber = blockCountRef.current++;
 
       setNodes((prev) => {
         // Convert desired "center" to top-left for the node
         const desiredTopLeft = {
-          x: position.x - DEFAULT_NODE_SIZE.width / 2,
-          y: position.y - DEFAULT_NODE_SIZE.height / 2,
+          x: position.x - NEW_BLOCK_SIZE.width / 2,
+          y: position.y - NEW_BLOCK_SIZE.height / 2,
         };
 
         // Find a free spot so we don't overlap existing nodes
-        const placedTopLeft = findNonOverlappingTopLeft(desiredTopLeft, prev);
+        const placedTopLeft = findNonOverlappingTopLeft(
+          desiredTopLeft,
+          NEW_BLOCK_SIZE,
+          prev
+        );
 
         const newNode = {
           id,
           type: "building",
           position: placedTopLeft,
-          data: { label: `Block ${blockNumber}` },
-          style: { ...DEFAULT_NODE_SIZE },
+          data: { label: `Block ${nextBlockNumber}` },
+          style: { ...NEW_BLOCK_SIZE },
         };
 
         return [...prev, newNode];
       });
-
-      setEditingNodeId(id);
 
       // Optional: ensure it's in view
       requestAnimationFrame(() => {
@@ -175,6 +197,7 @@ function FlowCanvas() {
   // Your ReactFlow version didn't support onPaneDoubleClick; use click detail
   const onPaneClick = useCallback(
     (event) => {
+      closeContextMenu();
       if (event.detail !== 2) return;
 
       event.preventDefault();
@@ -194,12 +217,37 @@ function FlowCanvas() {
 
       createNodeAtPosition(flowPos);
     },
-    [createNodeAtPosition, reactFlow]
+    [closeContextMenu, createNodeAtPosition, reactFlow]
   );
 
   const onNodeDoubleClick = useCallback((_, node) => {
+    closeContextMenu();
     setEditingNodeId(node.id);
-  }, []);
+  }, [closeContextMenu]);
+
+  const onNodeContextMenu = useCallback(
+    (event, node) => {
+      event.preventDefault();
+
+      if (!wrapperRef.current) return;
+      const rect = wrapperRef.current.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+
+      setNodes((prev) =>
+        prev.map((item) => ({
+          ...item,
+          selected: item.id === node.id,
+        }))
+      );
+
+      setContextMenu({
+        nodeId: node.id,
+        position: { x, y },
+      });
+    },
+    [setNodes]
+  );
 
   const onConnect = useCallback(
     (connection) => setEdges((eds) => addEdge(connection, eds)),
@@ -245,6 +293,7 @@ function FlowCanvas() {
           nodeTypes={nodeTypesMemo}
           onPaneClick={onPaneClick}
           onNodeDoubleClick={onNodeDoubleClick}
+          onNodeContextMenu={onNodeContextMenu}
           fitView
           fitViewOptions={{ padding: 0.2 }}
         >
@@ -252,6 +301,22 @@ function FlowCanvas() {
           <MiniMap pannable zoomable className="app__minimap" />
           <Controls />
         </ReactFlow>
+        {contextMenu ? (
+          <div
+            className="app__context-menu"
+            style={{
+              left: contextMenu.position.x,
+              top: contextMenu.position.y,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => deleteNode(contextMenu.nodeId)}
+            >
+              Delete
+            </button>
+          </div>
+        ) : null}
       </main>
     </div>
   );
