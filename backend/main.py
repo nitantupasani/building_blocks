@@ -1,0 +1,390 @@
+from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import List, Dict, Optional, Any
+import json
+import yaml
+from pathlib import Path
+
+app = FastAPI(title="Building Blocks Editor API")
+
+# Enable CORS for frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"],  # Vite and React default ports
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Data storage (in-memory for now, can be replaced with database)
+STORAGE_FILE = Path(__file__).parent / "graph_data.json"
+
+# Initialize storage
+if not STORAGE_FILE.exists():
+    initial_data = {
+        "nodes": [],
+        "edges": []
+    }
+    STORAGE_FILE.write_text(json.dumps(initial_data, indent=2))
+
+
+# Pydantic models
+class Position(BaseModel):
+    x: float
+    y: float
+
+
+class NodeCreate(BaseModel):
+    id: str
+    type: str
+    position: Optional[Position] = None
+    properties: Dict[str, Any]
+
+
+class NodeUpdate(BaseModel):
+    type: Optional[str] = None
+    position: Optional[Position] = None
+    properties: Optional[Dict[str, Any]] = None
+
+
+class EdgeCreate(BaseModel):
+    id: str
+    source: str
+    target: str
+    sourceHandle: Optional[str] = None
+    targetHandle: Optional[str] = None
+
+
+class GraphData(BaseModel):
+    nodes: List[Dict[str, Any]]
+    edges: List[Dict[str, Any]]
+
+
+# Helper functions
+def load_graph() -> Dict:
+    """Load graph data from storage"""
+    return json.loads(STORAGE_FILE.read_text())
+
+
+def save_graph(data: Dict):
+    """Save graph data to storage"""
+    STORAGE_FILE.write_text(json.dumps(data, indent=2))
+
+
+# API Endpoints
+@app.get("/")
+async def root():
+    return {"message": "Building Blocks Editor API", "version": "1.0.0"}
+
+
+@app.get("/api/graph", response_model=GraphData)
+async def get_graph():
+    """Get the entire graph (nodes and edges)"""
+    data = load_graph()
+    return data
+
+
+@app.post("/api/graph")
+async def update_graph(graph: GraphData):
+    """Replace the entire graph"""
+    save_graph(graph.dict())
+    return {"message": "Graph updated successfully"}
+
+
+@app.get("/api/nodes")
+async def get_nodes():
+    """Get all nodes"""
+    data = load_graph()
+    return {"nodes": data["nodes"]}
+
+
+@app.post("/api/nodes")
+async def create_node(node: NodeCreate):
+    """Create a new node"""
+    data = load_graph()
+    
+    # Check if node ID already exists
+    if any(n["id"] == node.id for n in data["nodes"]):
+        raise HTTPException(status_code=400, detail="Node ID already exists")
+    
+    node_data = node.dict()
+    data["nodes"].append(node_data)
+    save_graph(data)
+    
+    return {"message": "Node created", "node": node_data}
+
+
+@app.get("/api/nodes/{node_id}")
+async def get_node(node_id: str):
+    """Get a specific node by ID"""
+    data = load_graph()
+    node = next((n for n in data["nodes"] if n["id"] == node_id), None)
+    
+    if not node:
+        raise HTTPException(status_code=404, detail="Node not found")
+    
+    return node
+
+
+@app.put("/api/nodes/{node_id}")
+async def update_node(node_id: str, update: NodeUpdate):
+    """Update a node's properties, type, or position"""
+    data = load_graph()
+    node = next((n for n in data["nodes"] if n["id"] == node_id), None)
+    
+    if not node:
+        raise HTTPException(status_code=404, detail="Node not found")
+    
+    # Update fields if provided
+    update_data = update.dict(exclude_unset=True)
+    if "type" in update_data:
+        node["type"] = update_data["type"]
+    if "position" in update_data and update_data["position"]:
+        node["position"] = update_data["position"]
+    if "properties" in update_data and update_data["properties"]:
+        node["properties"].update(update_data["properties"])
+    
+    save_graph(data)
+    return {"message": "Node updated", "node": node}
+
+
+@app.delete("/api/nodes/{node_id}")
+async def delete_node(node_id: str):
+    """Delete a node and its connected edges"""
+    data = load_graph()
+    
+    # Find and remove the node
+    node_index = next((i for i, n in enumerate(data["nodes"]) if n["id"] == node_id), None)
+    if node_index is None:
+        raise HTTPException(status_code=404, detail="Node not found")
+    
+    data["nodes"].pop(node_index)
+    
+    # Remove all edges connected to this node
+    data["edges"] = [e for e in data["edges"] if e["source"] != node_id and e["target"] != node_id]
+    
+    save_graph(data)
+    return {"message": "Node deleted", "id": node_id}
+
+
+@app.get("/api/edges")
+async def get_edges():
+    """Get all edges"""
+    data = load_graph()
+    return {"edges": data["edges"]}
+
+
+@app.post("/api/edges")
+async def create_edge(edge: EdgeCreate):
+    """Create a new edge/connection"""
+    data = load_graph()
+    
+    # Verify source and target nodes exist
+    node_ids = {n["id"] for n in data["nodes"]}
+    if edge.source not in node_ids:
+        raise HTTPException(status_code=404, detail=f"Source node {edge.source} not found")
+    if edge.target not in node_ids:
+        raise HTTPException(status_code=404, detail=f"Target node {edge.target} not found")
+    
+    # Check if edge already exists
+    if any(e["id"] == edge.id for e in data["edges"]):
+        raise HTTPException(status_code=400, detail="Edge ID already exists")
+    
+    edge_data = edge.dict()
+    data["edges"].append(edge_data)
+    save_graph(data)
+    
+    return {"message": "Edge created", "edge": edge_data}
+
+
+@app.delete("/api/edges/{edge_id}")
+async def delete_edge(edge_id: str):
+    """Delete an edge"""
+    data = load_graph()
+    
+    edge_index = next((i for i, e in enumerate(data["edges"]) if e["id"] == edge_id), None)
+    if edge_index is None:
+        raise HTTPException(status_code=404, detail="Edge not found")
+    
+    data["edges"].pop(edge_index)
+    save_graph(data)
+    
+    return {"message": "Edge deleted", "id": edge_id}
+
+
+@app.get("/api/tree")
+async def get_tree_structure():
+    """Get the graph as a tree structure (for visualization)"""
+    data = load_graph()
+    
+    # Build adjacency list
+    children = {}
+    for edge in data["edges"]:
+        parent = edge["source"]
+        child = edge["target"]
+        if parent not in children:
+            children[parent] = []
+        children[parent].append(child)
+    
+    # Find root nodes (nodes with no incoming edges)
+    all_targets = {e["target"] for e in data["edges"]}
+    roots = [n["id"] for n in data["nodes"] if n["id"] not in all_targets]
+    
+    def build_tree(node_id):
+        node = next((n for n in data["nodes"] if n["id"] == node_id), None)
+        if not node:
+            return None
+        
+        tree_node = {
+            "id": node["id"],
+            "type": node["type"],
+            "properties": node.get("properties", {}),
+            "children": []
+        }
+        
+        if node_id in children:
+            tree_node["children"] = [build_tree(child_id) for child_id in children[node_id]]
+        
+        return tree_node
+    
+    tree = [build_tree(root_id) for root_id in roots if root_id]
+    
+    return {"tree": tree, "roots": roots}
+
+
+# YAML Import Functions
+def process_yaml_to_graph(yaml_data: Dict) -> Dict:
+    """
+    Convert YAML structure to graph format (nodes + edges).
+    This is a DUMMY function - modify logic based on your YAML structure.
+    
+    Expected YAML structure:
+    {
+        "building": {...},
+        "loops": [{...}],
+        "sensors": [{...}]
+    }
+    """
+    nodes = []
+    edges = []
+    
+    # Process building (root node)
+    if "building" in yaml_data:
+        building = yaml_data["building"]
+        nodes.append({
+            "id": building["id"],
+            "type": building["type"],
+            "position": None,  # Let frontend calculate
+            "properties": building.get("properties", {})
+        })
+    
+    # Process loops
+    if "loops" in yaml_data:
+        for loop in yaml_data["loops"]:
+            nodes.append({
+                "id": loop["id"],
+                "type": loop["type"],
+                "position": None,
+                "properties": loop.get("properties", {})
+            })
+            
+            # Create edge from parent to this loop
+            if "parent" in loop:
+                edge_id = f"e-{loop['parent']}-{loop['id']}"
+                edges.append({
+                    "id": edge_id,
+                    "source": loop["parent"],
+                    "target": loop["id"],
+                    "sourceHandle": "bottom",
+                    "targetHandle": "top"
+                })
+    
+    # Process sensors
+    if "sensors" in yaml_data:
+        for sensor in yaml_data["sensors"]:
+            nodes.append({
+                "id": sensor["id"],
+                "type": sensor["type"],
+                "position": None,
+                "properties": sensor.get("properties", {})
+            })
+            
+            # Create edge from parent to this sensor
+            if "parent" in sensor:
+                edge_id = f"e-{sensor['parent']}-{sensor['id']}"
+                edges.append({
+                    "id": edge_id,
+                    "source": sensor["parent"],
+                    "target": sensor["id"],
+                    "sourceHandle": "bottom",
+                    "targetHandle": "top"
+                })
+    
+    return {"nodes": nodes, "edges": edges}
+
+
+@app.post("/api/import/yaml")
+async def import_yaml(file: UploadFile = File(...)):
+    """
+    Import graph from YAML file.
+    Replaces current graph with data from YAML.
+    """
+    try:
+        # Read and parse YAML
+        content = await file.read()
+        yaml_data = yaml.safe_load(content)
+        
+        # Convert YAML to graph structure
+        graph_data = process_yaml_to_graph(yaml_data)
+        
+        # Save to storage
+        save_graph(graph_data)
+        
+        return {
+            "message": "YAML imported successfully",
+            "nodes_count": len(graph_data["nodes"]),
+            "edges_count": len(graph_data["edges"]),
+            "graph": graph_data
+        }
+    except yaml.YAMLError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid YAML: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing YAML: {str(e)}")
+
+
+@app.post("/api/import/yaml-file")
+async def import_yaml_from_file(filepath: str):
+    """
+    Import graph from YAML file path on server.
+    Useful for testing without uploading.
+    """
+    try:
+        yaml_path = Path(filepath)
+        if not yaml_path.exists():
+            raise HTTPException(status_code=404, detail=f"File not found: {filepath}")
+        
+        # Read and parse YAML
+        yaml_data = yaml.safe_load(yaml_path.read_text())
+        
+        # Convert YAML to graph structure
+        graph_data = process_yaml_to_graph(yaml_data)
+        
+        # Save to storage
+        save_graph(graph_data)
+        
+        return {
+            "message": f"YAML imported successfully from {filepath}",
+            "nodes_count": len(graph_data["nodes"]),
+            "edges_count": len(graph_data["edges"]),
+            "graph": graph_data
+        }
+    except yaml.YAMLError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid YAML: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing YAML: {str(e)}")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

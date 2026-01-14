@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -12,24 +12,50 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 
 import BuildingNode from "./nodes/BuildingNode.jsx";
+import PrimaryHWNode from "./nodes/PrimaryHWNode.jsx";
+import PrimaryCHWNode from "./nodes/PrimaryCHWNode.jsx";
+import SecondaryHWNode from "./nodes/SecondaryHWNode.jsx";
+import SecondaryCHWNode from "./nodes/SecondaryCHWNode.jsx";
+import TertiaryHWNode from "./nodes/TertiaryHWNode.jsx";
+import TertiaryCHWNode from "./nodes/TertiaryCHWNode.jsx";
+import SensorNode from "./nodes/SensorNode.jsx";
+import { api, transformToReactFlow, transformToBackend } from "./api/graphApi.js";
+import { calculateTreeLayout } from "./utils/layoutAlgorithm.js";
 import "./App.css";
 
-const DEFAULT_NODE_SIZE = { width: 150, height: 100 };
-const NEW_BLOCK_SIZE = { width: 150, height: 100 };
+const nodeTypes = {
+  building: BuildingNode,
+  "primary-hw": PrimaryHWNode,
+  "primary-chw": PrimaryCHWNode,
+  "secondary-hw": SecondaryHWNode,
+  "secondary-chw": SecondaryCHWNode,
+  "tertiary-hw": TertiaryHWNode,
+  "tertiary-chw": TertiaryCHWNode,
+  sensor: SensorNode,
+};
+
+// Helper function to get size for a block type
+const getBlockSize = (blockType) => {
+  const nodeComponent = nodeTypes[blockType];
+  return nodeComponent?.size || { width: 150, height: 100 };
+};
+
+const DEFAULT_NODE_SIZE = BuildingNode.size;
+const NEW_BLOCK_SIZE = BuildingNode.size;
 
 const initialNodes = [
   {
     id: "1",
     type: "building",
     position: { x: 120, y: 80 },
-    data: { label: "Building" },
+    data: {
+      label: "Building",
+      isExpanded: false,
+      blockType: "building",
+    },
     style: { ...DEFAULT_NODE_SIZE },
   },
 ];
-
-const nodeTypes = {
-  building: BuildingNode,
-};
 
 const rectsOverlap = (a, b) =>
   a.x < b.x + b.w &&
@@ -85,14 +111,160 @@ function FlowCanvas() {
   const idRef = useRef(2);
   const blockCountRef = useRef(1);
   const wrapperRef = useRef(null);
+  const saveTimeoutRef = useRef(null);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [loading, setLoading] = useState(true);
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   const [editingNodeId, setEditingNodeId] = useState(null);
   const [contextMenu, setContextMenu] = useState(null);
 
   const nodeTypesMemo = useMemo(() => nodeTypes, []);
+
+  // Load graph from backend on mount
+  useEffect(() => {
+    const loadGraph = async () => {
+      try {
+        const data = await api.getGraph();
+        const { nodes: loadedNodes, edges: loadedEdges } = transformToReactFlow(data);
+        
+        // Apply auto-layout for nodes without positions
+        const needsLayout = loadedNodes.some(n => !n.position || (n.position.x === 0 && n.position.y === 0));
+        
+        if (needsLayout && loadedNodes.length > 0) {
+          const layoutedNodes = calculateTreeLayout(loadedNodes, loadedEdges);
+          setNodes(layoutedNodes);
+        } else {
+          setNodes(loadedNodes);
+        }
+        
+        setEdges(loadedEdges);
+        
+        // Update ID counter to avoid conflicts
+        if (loadedNodes.length > 0) {
+          const maxId = Math.max(...loadedNodes.map(n => parseInt(n.id) || 0));
+          idRef.current = maxId + 1;
+        }
+      } catch (error) {
+        console.error('Failed to load graph:', error);
+        // Start with empty graph if backend is not available
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadGraph();
+  }, [setNodes, setEdges]);
+
+  // Auto-save to backend with debouncing
+  const saveToBackend = useCallback((nodesToSave, edgesToSave) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        const backendData = transformToBackend(nodesToSave, edgesToSave);
+        await api.updateGraph(backendData.nodes, backendData.edges);
+        console.log('Graph saved to backend');
+      } catch (error) {
+        console.error('Failed to save graph:', error);
+      }
+    }, 1000); // Debounce: save 1 second after last change
+  }, []);
+
+  // Save when nodes or edges change
+  useEffect(() => {
+    if (!loading && nodes.length >= 0) {
+      saveToBackend(nodes, edges);
+    }
+  }, [nodes, edges, loading, saveToBackend]);
+
+  // Handle YAML file selection
+  const handleFileChange = useCallback((event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadedFile(file);
+    }
+  }, []);
+
+  // Upload YAML and load graph
+  const handleUploadYAML = useCallback(async () => {
+    if (!uploadedFile) {
+      alert('Please select a YAML file first');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', uploadedFile);
+
+      const response = await fetch('http://localhost:8000/api/import/yaml', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('YAML uploaded:', result);
+      
+      // Reload graph from backend
+      const data = await api.getGraph();
+      const { nodes: loadedNodes, edges: loadedEdges } = transformToReactFlow(data);
+      
+      // Apply auto-layout
+      const layoutedNodes = calculateTreeLayout(loadedNodes, loadedEdges);
+      setNodes(layoutedNodes);
+      setEdges(loadedEdges);
+      
+      // Update ID counter
+      if (loadedNodes.length > 0) {
+        const maxId = Math.max(...loadedNodes.map(n => parseInt(n.id) || 0));
+        idRef.current = maxId + 1;
+      }
+
+      // Fit view to show all nodes
+      setTimeout(() => {
+        reactFlow.fitView?.({ padding: 0.2, includeHiddenNodes: true });
+      }, 100);
+
+      alert(`Success! Loaded ${result.nodes_count} nodes and ${result.edges_count} edges`);
+      
+      // Clear the file input so user can select the same or different file again
+      const fileInput = document.getElementById('yaml-upload');
+      if (fileInput) fileInput.value = '';
+      setUploadedFile(null);
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert(`Failed to upload YAML: ${error.message}`);
+    } finally {
+      setUploading(false);
+    }
+  }, [uploadedFile, setNodes, setEdges, reactFlow]);
+
+  // Draw graph - reapply layout to current graph
+  const handleDrawGraph = useCallback(() => {
+    if (nodes.length === 0) {
+      alert('No nodes to draw. Please upload a YAML file first.');
+      return;
+    }
+
+    // Reapply auto-layout
+    const layoutedNodes = calculateTreeLayout(nodes, edges);
+    setNodes(layoutedNodes);
+
+    // Fit view
+    setTimeout(() => {
+      reactFlow.fitView?.({ padding: 0.2, includeHiddenNodes: true });
+    }, 100);
+  }, [nodes, edges, setNodes, reactFlow]);
 
   const updateNodeLabel = useCallback(
     (id, nextLabel) => {
@@ -117,9 +289,83 @@ function FlowCanvas() {
     setEditingNodeId(null);
   }, []);
 
+  const toggleNodeExpand = useCallback(
+    (id) => {
+      setNodes((prev) =>
+        prev.map((node) => {
+          if (node.id !== id) return node;
+          
+          const isExpanded = !node.data.isExpanded;
+          const blockSize = getBlockSize(node.data.blockType);
+          const newHeight = isExpanded ? blockSize.height * 2.5 : blockSize.height;
+          
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              isExpanded,
+            },
+            style: {
+              ...node.style,
+              height: newHeight,
+            },
+          };
+        })
+      );
+    },
+    [setNodes]
+  );
+
+  const updateNodeProperty = useCallback(
+    (id, property, value) => {
+      setNodes((prev) =>
+        prev.map((node) =>
+          node.id === id
+            ? {
+                ...node,
+                data: {
+                  ...node.data,
+                  [property]: value,
+                },
+              }
+            : node
+        )
+      );
+    },
+    [setNodes]
+  );
+
   const closeContextMenu = useCallback(() => {
     setContextMenu(null);
   }, []);
+
+  const changeBlockType = useCallback(
+    (nodeId, blockType) => {
+      const newSize = getBlockSize(blockType);
+
+      setNodes((prev) =>
+        prev.map((node) =>
+          node.id === nodeId
+            ? {
+                ...node,
+                type: blockType,
+                data: {
+                  ...node.data,
+                  blockType,
+                },
+                style: {
+                  ...node.style,
+                  width: newSize.width,
+                  height: node.data.isExpanded ? newSize.height * 2.5 : newSize.height,
+                },
+              }
+            : node
+        )
+      );
+      closeContextMenu();
+    },
+    [closeContextMenu, setNodes]
+  );
 
   const deleteNode = useCallback(
     (nodeId) => {
@@ -133,32 +379,58 @@ function FlowCanvas() {
     [closeContextMenu, setEdges, setNodes]
   );
 
+  const onEdgesDelete = useCallback(
+    (deletedEdges) => {
+      setEdges((eds) =>
+        eds.filter((edge) => !deletedEdges.find((de) => de.id === edge.id))
+      );
+    },
+    [setEdges]
+  );
+
   const createNodeAtPosition = useCallback(
-    (position) => {
+    (position, blockType = "building") => {
       const blockNumber = idRef.current;
       const id = String(idRef.current++);
       const nextBlockNumber = blockCountRef.current++;
 
+      const blockLabels = {
+        building: "Building",
+        "primary-hw": "Primary HW Loop",
+        "primary-chw": "Primary CHW Loop",
+        "secondary-hw": "Secondary HW Loop",
+        "secondary-chw": "Secondary CHW Loop",
+        "tertiary-hw": "Tertiary HW Loop",
+        "tertiary-chw": "Tertiary CHW Loop",
+        sensor: "Sensor",
+      };
+
+      const blockSize = getBlockSize(blockType);
+
       setNodes((prev) => {
         // Convert desired "center" to top-left for the node
         const desiredTopLeft = {
-          x: position.x - NEW_BLOCK_SIZE.width / 2,
-          y: position.y - NEW_BLOCK_SIZE.height / 2,
+          x: position.x - blockSize.width / 2,
+          y: position.y - blockSize.height / 2,
         };
 
         // Find a free spot so we don't overlap existing nodes
         const placedTopLeft = findNonOverlappingTopLeft(
           desiredTopLeft,
-          NEW_BLOCK_SIZE,
+          blockSize,
           prev
         );
 
         const newNode = {
           id,
-          type: "building",
+          type: blockType,
           position: placedTopLeft,
-          data: { label: `Block ${nextBlockNumber}` },
-          style: { ...NEW_BLOCK_SIZE },
+          data: {
+            label: blockLabels[blockType] || "Block",
+            isExpanded: false,
+            blockType,
+          },
+          style: { ...blockSize },
         };
 
         return [...prev, newNode];
@@ -172,7 +444,7 @@ function FlowCanvas() {
     [reactFlow, setNodes]
   );
 
-  const addBlockAtCenter = useCallback(() => {
+  const addBlockAtCenter = useCallback((blockType = "building") => {
     if (!wrapperRef.current) return;
 
     const rect = wrapperRef.current.getBoundingClientRect();
@@ -187,11 +459,11 @@ function FlowCanvas() {
 
     if (!Number.isFinite(centerFlow.x) || !Number.isFinite(centerFlow.y)) {
       // fallback
-      createNodeAtPosition({ x: 0, y: 0 });
+      createNodeAtPosition({ x: 0, y: 0 }, blockType);
       return;
     }
 
-    createNodeAtPosition(centerFlow);
+    createNodeAtPosition(centerFlow, blockType);
   }, [createNodeAtPosition, reactFlow]);
 
   // Your ReactFlow version didn't support onPaneDoubleClick; use click detail
@@ -254,6 +526,16 @@ function FlowCanvas() {
     [setEdges]
   );
 
+  const onReconnect = useCallback(
+    (oldEdge, newConnection) => {
+      setEdges((eds) => {
+        const filtered = eds.filter((edge) => edge.id !== oldEdge.id);
+        return addEdge(newConnection, filtered);
+      });
+    },
+    [setEdges]
+  );
+
   const nodesWithHandlers = useMemo(
     () =>
       nodes.map((node) => ({
@@ -261,11 +543,14 @@ function FlowCanvas() {
         data: {
           ...node.data,
           isEditing: editingNodeId === node.id,
+          selected: node.selected,
           onChangeLabel: updateNodeLabel,
           onFinishEdit: finishEditing,
+          onToggleExpand: toggleNodeExpand,
+          onPropertyChange: updateNodeProperty,
         },
       })),
-    [editingNodeId, finishEditing, nodes, updateNodeLabel]
+    [editingNodeId, finishEditing, nodes, updateNodeLabel, toggleNodeExpand, updateNodeProperty]
   );
 
   return (
@@ -276,24 +561,112 @@ function FlowCanvas() {
           <p>
             Use the Add block button or double-click the canvas to add a block.
             Double-click a block to edit its label. Use the side handles to connect nodes.
+            {loading && " Loading..."}
           </p>
         </div>
       </header>
 
       <main className="app__canvas" ref={wrapperRef}>
-        <button className="app__add-button" type="button" onClick={addBlockAtCenter}>
-          Add block
-        </button>
+        <div className="app__yaml-controls">
+          <div className="app__yaml-upload">
+            <input
+              type="file"
+              accept=".yaml,.yml"
+              onChange={handleFileChange}
+              id="yaml-upload"
+              className="app__file-input"
+            />
+            <label htmlFor="yaml-upload" className="app__file-label">
+              {uploadedFile ? uploadedFile.name : 'Choose YAML'}
+            </label>
+          </div>
+          <button
+            className="app__yaml-button app__yaml-button--upload"
+            onClick={handleUploadYAML}
+            disabled={!uploadedFile || uploading}
+          >
+            {uploading ? 'Uploading...' : 'Upload'}
+          </button>
+          <button
+            className="app__yaml-button app__yaml-button--draw"
+            onClick={handleDrawGraph}
+            disabled={nodes.length === 0}
+          >
+            Draw Graph
+          </button>
+        </div>
+        <div className="app__add-buttons">
+          <button
+            className="app__add-button app__add-button--primary-hw"
+            type="button"
+            onClick={() => addBlockAtCenter("primary-hw")}
+          >
+            + Primary HW
+          </button>
+          <button
+            className="app__add-button app__add-button--primary-chw"
+            type="button"
+            onClick={() => addBlockAtCenter("primary-chw")}
+          >
+            + Primary CHW
+          </button>
+          <button
+            className="app__add-button app__add-button--secondary-hw"
+            type="button"
+            onClick={() => addBlockAtCenter("secondary-hw")}
+          >
+            + Secondary HW
+          </button>
+          <button
+            className="app__add-button app__add-button--secondary-chw"
+            type="button"
+            onClick={() => addBlockAtCenter("secondary-chw")}
+          >
+            + Secondary CHW
+          </button>
+          <button
+            className="app__add-button app__add-button--tertiary-hw"
+            type="button"
+            onClick={() => addBlockAtCenter("tertiary-hw")}
+          >
+            + Tertiary HW
+          </button>
+          <button
+            className="app__add-button app__add-button--tertiary-chw"
+            type="button"
+            onClick={() => addBlockAtCenter("tertiary-chw")}
+          >
+            + Tertiary CHW
+          </button>
+          <button
+            className="app__add-button app__add-button--sensor"
+            type="button"
+            onClick={() => addBlockAtCenter("sensor")}
+          >
+            + Sensor
+          </button>
+        </div>
         <ReactFlow
           nodes={nodesWithHandlers}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onReconnect={onReconnect}
+          onEdgesDelete={onEdgesDelete}
           nodeTypes={nodeTypesMemo}
           onPaneClick={onPaneClick}
           onNodeDoubleClick={onNodeDoubleClick}
           onNodeContextMenu={onNodeContextMenu}
+          connectionMode="loose"
+          defaultEdgeOptions={{
+            type: 'default',
+            animated: true,
+            deletable: true,
+          }}
+          elementsSelectable={true}
+          reconnectRadius={20}
+          deleteKeyCode={['Backspace', 'Delete']}
           fitView
           fitViewOptions={{ padding: 0.2 }}
         >
@@ -309,8 +682,69 @@ function FlowCanvas() {
               top: contextMenu.position.y,
             }}
           >
+            <div className="app__context-menu-section">
+              <div className="app__context-menu-label">Change Type</div>
+              <button
+                type="button"
+                className="app__context-menu-item"
+                onClick={() => changeBlockType(contextMenu.nodeId, "building")}
+              >
+                Building
+              </button>
+              <button
+                type="button"
+                className="app__context-menu-item"
+                onClick={() => changeBlockType(contextMenu.nodeId, "primary-hw")}
+              >
+                Primary HW Loop
+              </button>
+              <button
+                type="button"
+                className="app__context-menu-item"
+                onClick={() => changeBlockType(contextMenu.nodeId, "primary-chw")}
+              >
+                Primary CHW Loop
+              </button>
+              <button
+                type="button"
+                className="app__context-menu-item"
+                onClick={() => changeBlockType(contextMenu.nodeId, "secondary-hw")}
+              >
+                Secondary HW Loop
+              </button>
+              <button
+                type="button"
+                className="app__context-menu-item"
+                onClick={() => changeBlockType(contextMenu.nodeId, "secondary-chw")}
+              >
+                Secondary CHW Loop
+              </button>
+              <button
+                type="button"
+                className="app__context-menu-item"
+                onClick={() => changeBlockType(contextMenu.nodeId, "tertiary-hw")}
+              >
+                Tertiary HW Loop
+              </button>
+              <button
+                type="button"
+                className="app__context-menu-item"
+                onClick={() => changeBlockType(contextMenu.nodeId, "tertiary-chw")}
+              >
+                Tertiary CHW Loop
+              </button>
+              <button
+                type="button"
+                className="app__context-menu-item"
+                onClick={() => changeBlockType(contextMenu.nodeId, "sensor")}
+              >
+                Sensor
+              </button>
+            </div>
+            <div className="app__context-menu-divider"></div>
             <button
               type="button"
+              className="app__context-menu-item app__context-menu-item--delete"
               onClick={() => deleteNode(contextMenu.nodeId)}
             >
               Delete

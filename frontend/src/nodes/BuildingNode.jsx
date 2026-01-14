@@ -1,42 +1,18 @@
-import { memo, useEffect, useRef } from "react";
-import { Handle, Position } from "reactflow";
-import "./BuildingNode.css";
+import { memo } from "react";
+import BaseNode from "./BaseNode.jsx";
 
-function BuildingNode({ id, data }) {
-  const inputRef = useRef(null);
-  const label = data?.label ?? "Building";
-  const isEditing = !!data?.isEditing;
+const PROPERTIES = [
+  { key: "address", label: "Address", type: "text", placeholder: "Building address..." },
+  { key: "floors", label: "Floors", type: "number", placeholder: "Number of floors" },
+  { key: "area", label: "Area (sqft)", type: "number", placeholder: "Total area" },
+  { key: "description", label: "Description", type: "textarea", placeholder: "Building details..." },
+];
 
-  useEffect(() => {
-    if (isEditing) {
-      inputRef.current?.focus();
-      inputRef.current?.select();
-    }
-  }, [isEditing]);
-
-  return (
-    <div className="building-node">
-      <Handle type="target" position={Position.Top} id="t" />
-      <Handle type="target" position={Position.Left} id="l" />
-      <Handle type="source" position={Position.Right} id="r" />
-      <Handle type="source" position={Position.Bottom} id="b" />
-
-      {isEditing ? (
-        <input
-          ref={inputRef}
-          className="building-node__input"
-          value={label}
-          onChange={(e) => data?.onChangeLabel?.(id, e.target.value)}
-          onBlur={() => data?.onFinishEdit?.()}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === "Escape") data?.onFinishEdit?.();
-          }}
-        />
-      ) : (
-        <div className="building-node__label">{label}</div>
-      )}
-    </div>
-  );
+function BuildingNode(props) {
+  return <BaseNode {...props} color="#94a3b8" properties={PROPERTIES} />;
 }
 
-export default memo(BuildingNode);
+const MemoizedBuildingNode = memo(BuildingNode);
+MemoizedBuildingNode.size = { width: 240, height: 140 };
+
+export default MemoizedBuildingNode;

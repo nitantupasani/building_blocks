@@ -1,0 +1,76 @@
+# Example YAML structure for building graph
+# This is a template - modify as needed
+
+building:
+  id: building-1
+  type: building
+  properties:
+    label: Main Building
+    address: 123 Main Street
+    floors: 10
+    area: 50000
+    description: Primary office building
+
+loops:
+  - id: primary-hw-1
+    type: primary-hw
+    parent: building-1
+    properties:
+      label: Primary HW Loop 1
+      flowRate: 1000
+      supplyTemp: 180
+      returnTemp: 160
+      pumpInfo: Pump A
+      description: Main heating loop
+  
+  - id: primary-chw-1
+    type: primary-chw
+    parent: building-1
+    properties:
+      label: Primary CHW Loop 1
+      flowRate: 800
+      supplyTemp: 45
+      returnTemp: 55
+      chillerInfo: Chiller B
+      description: Main cooling loop
+  
+  - id: secondary-hw-1
+    type: secondary-hw
+    parent: primary-hw-1
+    properties:
+      label: Secondary HW Loop 1
+      flowRate: 500
+      supplyTemp: 170
+      returnTemp: 150
+      description: North wing heating
+  
+  - id: secondary-chw-1
+    type: secondary-chw
+    parent: primary-chw-1
+    properties:
+      label: Secondary CHW Loop 1
+      flowRate: 400
+      supplyTemp: 48
+      returnTemp: 58
+      description: South wing cooling
+
+sensors:
+  - id: sensor-1
+    type: sensor
+    parent: secondary-hw-1
+    properties:
+      label: Temperature Sensor 1
+      sensorType: Temperature
+      unit: "°F"
+      range: "0-200"
+      location: Supply line
+  
+  - id: sensor-2
+    type: sensor
+    parent: secondary-chw-1
+    properties:
+      label: Flow Sensor 1
+      sensorType: Flow
+      unit: GPM
+      range: "0-1000"
+      location: Return line
