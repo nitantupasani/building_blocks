@@ -1,0 +1,7 @@
+body {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+.react-flow__pane {
+  background: #f8fafc;
+}
