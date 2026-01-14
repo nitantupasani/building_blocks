@@ -4,7 +4,8 @@ import ReactFlow, {
   Controls,
   MiniMap,
   ReactFlowProvider,
-  useReactFlow,
+  useNodesState,
+  useEdgesState,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import BuildingNode from "./nodes/BuildingNode.jsx";
@@ -20,88 +21,88 @@ const initialNodes = [
   },
 ];
 
-const nodeTypes = {
-  building: BuildingNode,
-};
-
+const nodeTypes = { building: BuildingNode };
 const DEFAULT_NODE_SIZE = { width: 220, height: 130 };
 
 function FlowCanvas() {
-  const reactFlow = useReactFlow();
   const idRef = useRef(2);
   const wrapperRef = useRef(null);
-  const [nodes, setNodes] = useState(initialNodes);
-  const [edges] = useState([]);
+
+  // ✅ store the RF instance from onInit (reliable)
+  const rfRef = useRef(null);
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [editingNodeId, setEditingNodeId] = useState(null);
 
   const nodeTypesMemo = useMemo(() => nodeTypes, []);
 
-  const updateNodeLabel = useCallback((id, nextLabel) => {
-    setNodes((prev) =>
-      prev.map((node) =>
-        node.id === id
-          ? {
-              ...node,
-              data: {
-                ...node.data,
-                label: nextLabel,
-              },
-            }
-          : node
-      )
-    );
-  }, []);
-
-  const finishEditing = useCallback(() => {
-    setEditingNodeId(null);
-  }, []);
-
-  const createNodeAtPosition = useCallback((position) => {
-    const id = String(idRef.current++);
-    const newNode = {
-      id,
-      type: "building",
-      position: {
-        x: position.x - DEFAULT_NODE_SIZE.width / 2,
-        y: position.y - DEFAULT_NODE_SIZE.height / 2,
-      },
-      data: { label: "Building" },
-      style: { ...DEFAULT_NODE_SIZE },
-    };
-    setNodes((prev) => [...prev, newNode]);
-    setEditingNodeId(id);
-  }, []);
-
-  const createNodeAt = useCallback(
-    (event) => {
-      const bounds = event.currentTarget.getBoundingClientRect();
-      const position = reactFlow.project({
-        x: event.clientX - bounds.left,
-        y: event.clientY - bounds.top,
-      });
-      createNodeAtPosition(position);
+  const updateNodeLabel = useCallback(
+    (id, nextLabel) => {
+      setNodes((prev) =>
+        prev.map((node) =>
+          node.id === id
+            ? { ...node, data: { ...node.data, label: nextLabel } }
+            : node
+        )
+      );
     },
-    [createNodeAtPosition, reactFlow]
+    [setNodes]
   );
 
+  const finishEditing = useCallback(() => setEditingNodeId(null), []);
+
+  const createNodeAtPosition = useCallback(
+  (position) => {
+    const id = String(idRef.current++);
+
+    const newNode = {
+      id,
+      type: "default", // ✅ TEMP: bypass your custom BuildingNode
+      position: {
+        x: position.x,
+        y: position.y,
+      },
+      data: { label: `Node ${id}` },
+    };
+
+    setNodes((prev) => [...prev, newNode]);
+  },
+  [setNodes]
+);
+
+
   const addBlockAtCenter = useCallback(() => {
-    if (!wrapperRef.current) {
-      return;
-    }
-    const bounds = wrapperRef.current.getBoundingClientRect();
-    const position = reactFlow.project({
-      x: bounds.width / 2,
-      y: bounds.height / 2,
-    });
-    createNodeAtPosition(position);
-  }, [createNodeAtPosition, reactFlow]);
+  // guaranteed visible for a first test
+  createNodeAtPosition({ x: 0, y: 0 });
+
+  // optional: zoom to include new node
+  requestAnimationFrame(() => {
+    rfRef.current?.fitView?.({ padding: 0.2 });
+  });
+}, [createNodeAtPosition]);
+
 
   const onPaneDoubleClick = useCallback(
     (event) => {
       event.preventDefault();
-      createNodeAt(event);
+      if (!rfRef.current) return;
+
+      const rect = event.currentTarget.getBoundingClientRect();
+      const screen = { x: event.clientX, y: event.clientY };
+
+      const toFlow =
+        rfRef.current.screenToFlowPosition ?? rfRef.current.project;
+
+      // for older versions using project with local coords:
+      const flowPos =
+        rfRef.current.screenToFlowPosition
+          ? toFlow(screen)
+          : toFlow({ x: screen.x - rect.left, y: screen.y - rect.top });
+
+      createNodeAtPosition(flowPos);
     },
-    [createNodeAt]
+    [createNodeAtPosition]
   );
 
   const onNodeDoubleClick = useCallback((_, node) => {
@@ -138,12 +139,19 @@ function FlowCanvas() {
           </button>
         </div>
       </header>
+
       <main className="app__canvas" ref={wrapperRef}>
         <ReactFlow
+          onInit={(instance) => (rfRef.current = instance)}   // ✅ important
           nodes={nodesWithHandlers}
           edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypesMemo}
-          onPaneDoubleClick={onPaneDoubleClick}
+          onPaneClick={(event) => {
+          if (event.detail === 2) onPaneDoubleClick(event);
+          }}
+
           onNodeDoubleClick={onNodeDoubleClick}
           fitView
           fitViewOptions={{ padding: 0.2 }}
