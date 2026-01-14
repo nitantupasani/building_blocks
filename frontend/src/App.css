@@ -25,6 +25,7 @@ body {
   flex: 1;
   min-height: 0;
   width: 100%;
+  position: relative;
 }
 
 /* this is the element React Flow renders into */
@@ -82,4 +83,31 @@ body {
 
 .app__minimap {
   background: #ffffff;
+}
+
+.app__context-menu {
+  position: absolute;
+  min-width: 140px;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
+  padding: 8px;
+  z-index: 10;
+}
+
+.app__context-menu button {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #dc2626;
+  cursor: pointer;
+}
+
+.app__context-menu button:hover {
+  background: rgba(220, 38, 38, 0.08);
 }
