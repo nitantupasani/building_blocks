@@ -1,0 +1,49 @@
+:root {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  color: #0f172a;
+  background-color: #f8fafc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app__header {
+  padding: 24px 32px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.app__header h1 {
+  margin: 0 0 8px;
+  font-size: 24px;
+}
+
+.app__header p {
+  margin: 0;
+  color: #475569;
+}
+
+.app__canvas {
+  flex: 1;
+  min-height: 0;
+}
+
+.app__minimap {
+  background: #ffffff;
+}
