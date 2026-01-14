@@ -1,43 +1,39 @@
 import { memo, useEffect, useRef } from "react";
-import { NodeResizer } from "reactflow";
+import { Handle, Position } from "reactflow";
 import "./BuildingNode.css";
 
-function BuildingNode({ id, data, selected }) {
+function BuildingNode({ id, data }) {
   const inputRef = useRef(null);
+  const label = data?.label ?? "Building";
+  const isEditing = !!data?.isEditing;
 
   useEffect(() => {
-    if (data.isEditing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
+    if (isEditing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
     }
-  }, [data.isEditing]);
-
-  const handleKeyDown = (event) => {
-    if (event.key === "Enter") {
-      data.onFinishEdit();
-    }
-  };
+  }, [isEditing]);
 
   return (
-    <div className={"building-node"}>
-      <NodeResizer
-        isVisible={selected}
-        minWidth={120}
-        minHeight={80}
-        handleStyle={{ width: 10, height: 10, borderRadius: 4 }}
-        lineStyle={{ borderColor: "#0078d7" }}
-      />
-      {data.isEditing ? (
+    <div className="building-node">
+      <Handle type="target" position={Position.Top} id="t" />
+      <Handle type="target" position={Position.Left} id="l" />
+      <Handle type="source" position={Position.Right} id="r" />
+      <Handle type="source" position={Position.Bottom} id="b" />
+
+      {isEditing ? (
         <input
           ref={inputRef}
           className="building-node__input"
-          value={data.label}
-          onChange={(event) => data.onChangeLabel(id, event.target.value)}
-          onBlur={data.onFinishEdit}
-          onKeyDown={handleKeyDown}
+          value={label}
+          onChange={(e) => data?.onChangeLabel?.(id, e.target.value)}
+          onBlur={() => data?.onFinishEdit?.()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === "Escape") data?.onFinishEdit?.();
+          }}
         />
       ) : (
-        <div className="building-node__label">{data.label}</div>
+        <div className="building-node__label">{label}</div>
       )}
     </div>
   );

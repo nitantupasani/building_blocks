@@ -13,13 +13,6 @@ body {
   min-height: 100vh;
 }
 
-html,
-body,
-#root {
-  height: 100%;
-  width: 100%;
-}
-
 .app {
   height: 100%;
   width: 100%;
@@ -85,11 +78,6 @@ body,
 .app__add-button:active {
   background: #1e40af;
   transform: translateY(0);
-}
-
-.app__canvas {
-  flex: 1;
-  min-height: 0;
 }
 
 .app__minimap {
