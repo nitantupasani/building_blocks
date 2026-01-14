@@ -4,8 +4,6 @@ import ReactFlow, {
   Controls,
   MiniMap,
   ReactFlowProvider,
-  useEdgesState,
-  useNodesState,
   useReactFlow,
 } from "reactflow";
 import "reactflow/dist/style.css";
@@ -31,8 +29,8 @@ const DEFAULT_NODE_SIZE = { width: 220, height: 130 };
 function FlowCanvas() {
   const reactFlow = useReactFlow();
   const idRef = useRef(2);
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes] = useState(initialNodes);
+  const [edges] = useState([]);
   const [editingNodeId, setEditingNodeId] = useState(null);
 
   const nodeTypesMemo = useMemo(() => nodeTypes, []);
@@ -122,15 +120,9 @@ function FlowCanvas() {
         <ReactFlow
           nodes={nodesWithHandlers}
           edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypesMemo}
           onPaneDoubleClick={onPaneDoubleClick}
           onNodeDoubleClick={onNodeDoubleClick}
-          panOnDrag
-          panOnScroll
-          zoomOnScroll
-          zoomOnPinch
           fitView
           fitViewOptions={{ padding: 0.2 }}
         >
