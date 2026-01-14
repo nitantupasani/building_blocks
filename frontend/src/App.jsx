@@ -14,8 +14,8 @@ import "reactflow/dist/style.css";
 import BuildingNode from "./nodes/BuildingNode.jsx";
 import "./App.css";
 
-const DEFAULT_NODE_SIZE = { width: 220, height: 130 };
-const NEW_BLOCK_SIZE = { width: 170, height: 100 };
+const DEFAULT_NODE_SIZE = { width: 150, height: 100 };
+const NEW_BLOCK_SIZE = { width: 150, height: 100 };
 
 const initialNodes = [
   {
@@ -135,6 +135,7 @@ function FlowCanvas() {
 
   const createNodeAtPosition = useCallback(
     (position) => {
+      const blockNumber = idRef.current;
       const id = String(idRef.current++);
       const nextBlockNumber = blockCountRef.current++;
 
@@ -270,22 +271,19 @@ function FlowCanvas() {
   return (
     <div className="app">
       <header className="app__header">
-        <div className="app__header-row">
-          <div>
-            <h1>Building Blocks Editor</h1>
-            <p>
-              Use the Add block button or double-click the canvas to add a block.
-              Double-click a block to edit its label. Use the side handles to connect nodes.
-            </p>
-          </div>
-
-          <button className="app__add-button" type="button" onClick={addBlockAtCenter}>
-            Add block
-          </button>
+        <div className="app__header-content">
+          <h1>Building Blocks Editor</h1>
+          <p>
+            Use the Add block button or double-click the canvas to add a block.
+            Double-click a block to edit its label. Use the side handles to connect nodes.
+          </p>
         </div>
       </header>
 
       <main className="app__canvas" ref={wrapperRef}>
+        <button className="app__add-button" type="button" onClick={addBlockAtCenter}>
+          Add block
+        </button>
         <ReactFlow
           nodes={nodesWithHandlers}
           edges={edges}
