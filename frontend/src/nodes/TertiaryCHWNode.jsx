@@ -2,6 +2,9 @@ import { memo } from "react";
 import BaseNode from "./BaseNode.jsx";
 
 const PROPERTIES = [
+  { key: "sensors_count", label: "Sensors Count", type: "number", placeholder: "0" },
+  { key: "equipment", label: "Equipment", type: "text", placeholder: "Equipment" },
+  { key: "sensors", label: "Sensors", type: "list" },
   { key: "flowRate", label: "Flow Rate (GPM)", type: "number", placeholder: "Flow rate" },
   { key: "supplyTemp", label: "Supply Temp (°F)", type: "number", placeholder: "Supply temp" },
   { key: "returnTemp", label: "Return Temp (°F)", type: "number", placeholder: "Return temp" },

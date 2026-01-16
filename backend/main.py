@@ -257,69 +257,173 @@ async def get_tree_structure():
 def process_yaml_to_graph(yaml_data: Dict) -> Dict:
     """
     Convert YAML structure to graph format (nodes + edges).
-    This is a DUMMY function - modify logic based on your YAML structure.
     
-    Expected YAML structure:
-    {
-        "building": {...},
-        "loops": [{...}],
-        "sensors": [{...}]
-    }
+    Structure:
+    building:
+      name: <building_name>
+      hot_water_loops:
+        - identifier: <id>
+          name: <name>
+          primary: true/false
+          downstream_loops: [<id1>, <id2>, ...]
+          heating_curves: [<id1>, <id2>, ...]
+    
+    Hierarchy:
+    Building -> Primary HW Loops -> Secondary HW Loops -> Heating Curves -> Sensors
     """
     nodes = []
     edges = []
     
-    # Process building (root node)
-    if "building" in yaml_data:
-        building = yaml_data["building"]
+    if "building" not in yaml_data:
+        raise ValueError("YAML must contain 'building' key")
+    
+    building = yaml_data["building"]
+    building_name = building.get("name", "Building")
+    building_id = "building-1"
+    
+    # Create building node
+    nodes.append({
+        "id": building_id,
+        "type": "building",
+        "position": None,
+        "properties": {
+            "label": building_name,
+            "description": f"Building with {len(building.get('hot_water_loops', []))} hot water loops"
+        }
+    })
+    
+    # Process hot water loops
+    hot_water_loops = building.get("hot_water_loops", [])
+    heating_curves = building.get("heating_curves", [])
+    
+    # Build lookup tables
+    loop_by_id = {}
+    curve_by_id = {}
+    
+    for loop in hot_water_loops:
+        if loop and loop.get("identifier"):
+            loop_by_id[loop["identifier"]] = loop
+    
+    for curve in heating_curves:
+        if curve and curve.get("identifier"):
+            curve_by_id[curve["identifier"]] = curve
+    
+    def process_loop_heating_curves(loop_id, loop_data):
+        """Process heating curves for a given loop"""
+        for curve_id in loop_data.get("heating_curves", []):
+            curve = curve_by_id.get(curve_id)
+            if not curve:
+                continue
+            
+            curve_name = curve.get("name", "Heating Curve")
+            
+            # Extract sensors data
+            sensors_list = curve.get("sensors", [])
+            sensors_data = []
+            for sensor in sensors_list:
+                # Sensors can be strings (just IDs) or objects with properties
+                if isinstance(sensor, str):
+                    sensors_data.append({
+                        "location": sensor,
+                        "occupation": "-",
+                        "setpoint": "-",
+                        "temperature": "-"
+                    })
+                elif isinstance(sensor, dict):
+                    sensor_location = sensor.get("location", sensor.get("temperature_register", "Unknown"))
+                    sensors_data.append({
+                        "location": sensor_location,
+                        "occupation": "✓" if sensor.get("occupation_register") or sensor.get("occupancy_schedule_override") else "✗",
+                        "setpoint": "✓" if sensor.get("setpoint_register") else "✗",
+                        "temperature": "✓" if sensor.get("temperature_register") else "✗"
+                    })
+            
+            # Determine the type based on parent loop type
+            parent_node = next((n for n in nodes if n["id"] == loop_id), None)
+            if parent_node:
+                parent_type = parent_node["type"]
+                # Heating curves attached to primary/secondary are tertiary, but we label them as heating curve nodes
+                curve_type = "tertiary-hw"  # Using tertiary as the heating curve node type
+            else:
+                curve_type = "tertiary-hw"
+            
+            nodes.append({
+                "id": curve_id,
+                "type": curve_type,
+                "position": None,
+                "properties": {
+                    "label": curve_name,
+                    "sensors_count": len(sensors_list),
+                    "equipment": ", ".join(curve.get("equipment", [])) if curve.get("equipment") else "N/A",
+                    "sensors": sensors_data
+                }
+            })
+            
+            # Connect loop to heating curve
+            edges.append({
+                "id": f"e-{loop_id}-{curve_id}",
+                "source": loop_id,
+                "target": curve_id,
+                "sourceHandle": "bottom",
+                "targetHandle": "top"
+            })
+    
+    def process_loop(loop_id, loop_data, parent_id, loop_type):
+        """Recursively process a loop and its downstream loops"""
+        loop_name = loop_data.get("name", f"{loop_type} Loop")
+        
+        # Create loop node
         nodes.append({
-            "id": building["id"],
-            "type": building["type"],
-            "position": None,  # Let frontend calculate
-            "properties": building.get("properties", {})
+            "id": loop_id,
+            "type": loop_type,
+            "position": None,
+            "properties": {
+                "label": loop_name,
+                "ahus": len(loop_data.get("ahus", [])),
+                "boilers": len(loop_data.get("boilers", [])),
+                "downstream_loops": len(loop_data.get("downstream_loops", [])),
+                "heating_curves": len(loop_data.get("heating_curves", []))
+            }
         })
-    
-    # Process loops
-    if "loops" in yaml_data:
-        for loop in yaml_data["loops"]:
-            nodes.append({
-                "id": loop["id"],
-                "type": loop["type"],
-                "position": None,
-                "properties": loop.get("properties", {})
-            })
+        
+        # Connect to parent
+        edges.append({
+            "id": f"e-{parent_id}-{loop_id}",
+            "source": parent_id,
+            "target": loop_id,
+            "sourceHandle": "bottom",
+            "targetHandle": "top"
+        })
+        
+        # Process downstream loops first (if any)
+        downstream_loops = loop_data.get("downstream_loops", [])
+        if downstream_loops:
+            # Determine child loop type
+            if loop_type == "primary-hw":
+                child_type = "secondary-hw"
+            elif loop_type == "secondary-hw":
+                child_type = "tertiary-hw"
+            else:
+                child_type = "tertiary-hw"  # Keep as tertiary for deeper nesting
             
-            # Create edge from parent to this loop
-            if "parent" in loop:
-                edge_id = f"e-{loop['parent']}-{loop['id']}"
-                edges.append({
-                    "id": edge_id,
-                    "source": loop["parent"],
-                    "target": loop["id"],
-                    "sourceHandle": "bottom",
-                    "targetHandle": "top"
-                })
+            for downstream_id in downstream_loops:
+                downstream_loop = loop_by_id.get(downstream_id)
+                if downstream_loop:
+                    process_loop(downstream_id, downstream_loop, loop_id, child_type)
+        
+        # Process heating curves (only if no downstream loops, or in addition to downstream)
+        # According to the structure, loops can have both downstream loops AND heating curves
+        process_loop_heating_curves(loop_id, loop_data)
     
-    # Process sensors
-    if "sensors" in yaml_data:
-        for sensor in yaml_data["sensors"]:
-            nodes.append({
-                "id": sensor["id"],
-                "type": sensor["type"],
-                "position": None,
-                "properties": sensor.get("properties", {})
-            })
-            
-            # Create edge from parent to this sensor
-            if "parent" in sensor:
-                edge_id = f"e-{sensor['parent']}-{sensor['id']}"
-                edges.append({
-                    "id": edge_id,
-                    "source": sensor["parent"],
-                    "target": sensor["id"],
-                    "sourceHandle": "bottom",
-                    "targetHandle": "top"
-                })
+    # Find and process primary loops
+    for loop in hot_water_loops:
+        if not loop or not loop.get("identifier"):
+            continue
+        
+        is_primary = loop.get("primary", False)
+        if is_primary:
+            loop_id = loop["identifier"]
+            process_loop(loop_id, loop, building_id, "primary-hw")
     
     return {"nodes": nodes, "edges": edges}
 

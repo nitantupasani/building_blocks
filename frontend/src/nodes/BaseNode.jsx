@@ -91,6 +91,30 @@ function BaseNode({ id, data, color, properties = [] }) {
                     className="base-node__number-input"
                     placeholder={prop.placeholder || ""}
                   />
+                ) : prop.type === "list" ? (
+                  <div className="base-node__list">
+                    {Array.isArray(data?.[prop.key]) && data[prop.key].length > 0 ? (
+                      <ul className="base-node__list-items">
+                        {data[prop.key].map((item, index) => (
+                          <li key={index} className="base-node__list-item">
+                            {typeof item === "object" ? (
+                              <div className="base-node__list-object">
+                                {Object.entries(item).map(([key, value]) => (
+                                  <div key={key} className="base-node__list-field">
+                                    <strong>{key}:</strong> {String(value)}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              String(item)
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <span className="base-node__list-empty">No items</span>
+                    )}
+                  </div>
                 ) : (
                   <input
                     type="text"
