@@ -418,6 +418,20 @@ body {
   gap: 16px;
 }
 
+.app__side-panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.app__side-panel-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+}
+
 .app__side-panel-field {
   display: flex;
   flex-direction: column;
@@ -426,13 +440,21 @@ body {
   color: #0f172a;
 }
 
+.app__side-panel-field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .app__side-panel-field label {
   font-weight: 600;
   color: #334155;
 }
 
 .app__side-panel-field input,
-.app__side-panel-field textarea {
+.app__side-panel-field textarea,
+.app__side-panel-field select {
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   padding: 8px 10px;
@@ -444,10 +466,38 @@ body {
 }
 
 .app__side-panel-field input:focus,
-.app__side-panel-field textarea:focus {
+.app__side-panel-field textarea:focus,
+.app__side-panel-field select:focus {
   outline: none;
   border-color: #6366f1;
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.app__side-panel-delete {
+  border: none;
+  background: transparent;
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.app__side-panel-delete:hover {
+  text-decoration: underline;
+}
+
+.app__side-panel-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.app__side-panel-toggle input {
+  width: 16px;
+  height: 16px;
 }
 
 .app__side-panel-hint {

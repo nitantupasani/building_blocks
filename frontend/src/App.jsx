@@ -11,14 +11,14 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 
-import BuildingNode, { PROPERTIES as BUILDING_PROPERTIES } from "./nodes/BuildingNode.jsx";
-import PrimaryHWNode, { PROPERTIES as PRIMARY_HW_PROPERTIES } from "./nodes/PrimaryHWNode.jsx";
-import PrimaryCHWNode, { PROPERTIES as PRIMARY_CHW_PROPERTIES } from "./nodes/PrimaryCHWNode.jsx";
-import SecondaryHWNode, { PROPERTIES as SECONDARY_HW_PROPERTIES } from "./nodes/SecondaryHWNode.jsx";
-import SecondaryCHWNode, { PROPERTIES as SECONDARY_CHW_PROPERTIES } from "./nodes/SecondaryCHWNode.jsx";
-import TertiaryHWNode, { PROPERTIES as TERTIARY_HW_PROPERTIES } from "./nodes/TertiaryHWNode.jsx";
-import TertiaryCHWNode, { PROPERTIES as TERTIARY_CHW_PROPERTIES } from "./nodes/TertiaryCHWNode.jsx";
-import SensorNode, { PROPERTIES as SENSOR_PROPERTIES } from "./nodes/SensorNode.jsx";
+import BuildingNode from "./nodes/BuildingNode.jsx";
+import PrimaryHWNode from "./nodes/PrimaryHWNode.jsx";
+import PrimaryCHWNode from "./nodes/PrimaryCHWNode.jsx";
+import SecondaryHWNode from "./nodes/SecondaryHWNode.jsx";
+import SecondaryCHWNode from "./nodes/SecondaryCHWNode.jsx";
+import TertiaryHWNode from "./nodes/TertiaryHWNode.jsx";
+import TertiaryCHWNode from "./nodes/TertiaryCHWNode.jsx";
+import SensorNode from "./nodes/SensorNode.jsx";
 import { api, transformToReactFlow, transformToBackend } from "./api/graphApi.js";
 import { calculateTreeLayout } from "./utils/layoutAlgorithm.js";
 import "./App.css";
@@ -34,17 +34,6 @@ const nodeTypes = {
   sensor: SensorNode,
 };
 
-const NODE_PROPERTIES = {
-  building: BUILDING_PROPERTIES,
-  "primary-hw": PRIMARY_HW_PROPERTIES,
-  "primary-chw": PRIMARY_CHW_PROPERTIES,
-  "secondary-hw": SECONDARY_HW_PROPERTIES,
-  "secondary-chw": SECONDARY_CHW_PROPERTIES,
-  "tertiary-hw": TERTIARY_HW_PROPERTIES,
-  "tertiary-chw": TERTIARY_CHW_PROPERTIES,
-  sensor: SENSOR_PROPERTIES,
-};
-
 const BLOCK_LABELS = {
   building: "Building",
   "primary-hw": "Primary HW Loop",
@@ -56,12 +45,15 @@ const BLOCK_LABELS = {
   sensor: "Sensor",
 };
 
-const HEATING_CURVE_PROPERTIES = [
-  { key: "label", label: "Label", type: "text", placeholder: "Heating Curve" },
-  { key: "equipment", label: "Equipment", type: "text", placeholder: "Equipment" },
-  { key: "sensors_count", label: "Sensors Count", type: "number", placeholder: "0" },
-  { key: "sensors", label: "Sensors", type: "list" },
-];
+const RESERVED_PROPERTY_KEYS = new Set([
+  "blockType",
+  "heatingCurveSelected",
+  "isEditing",
+  "onChangeLabel",
+  "onFinishEdit",
+  "onSelectHeatingCurve",
+  "selected",
+]);
 
 // Helper function to get size for a block type
 const getBlockSize = (blockType) => {
@@ -139,17 +131,59 @@ const stringifyJsonValue = (value, fallback) =>
 
 const getJsonFallback = (type) => (type === "list" ? [] : {});
 
+const formatPropertyLabel = (key) =>
+  key
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+const getPropertyType = (value) => {
+  if (Array.isArray(value)) return "list";
+  if (value === null || value === undefined) return "text";
+  if (typeof value === "number") return "number";
+  if (typeof value === "boolean") return "boolean";
+  if (typeof value === "object") return "object";
+  return "text";
+};
+
+const getPropertyEntries = (data, { includeLabel } = { includeLabel: false }) => {
+  if (!data) return [];
+  return Object.entries(data)
+    .filter(([key]) => (includeLabel ? true : key !== "label"))
+    .filter(([key]) => !RESERVED_PROPERTY_KEYS.has(key))
+    .map(([key, value]) => ({
+      key,
+      label: formatPropertyLabel(key),
+      type: getPropertyType(value),
+      value,
+    }));
+};
+
+const resolveNodeIdFromOption = (option) => {
+  if (!option) return null;
+  if (typeof option === "string") return option;
+  if (typeof option === "number") return String(option);
+  if (typeof option === "object") {
+    return option.id ?? option.identifier ?? option.nodeId ?? null;
+  }
+  return null;
+};
+
 function PropertiesPanel({
   node,
-  properties,
+  nodes,
+  edges,
   onUpdateLabel,
   onUpdateProperty,
+  onDeleteProperty,
   isCollapsed,
   onToggleCollapse,
   selectedHeatingCurve,
   onSelectHeatingCurve,
   onClearHeatingCurveSelection,
   onUpdateHeatingCurveProperty,
+  onDeleteHeatingCurveProperty,
+  onSelectNode,
 }) {
   const [draftValues, setDraftValues] = useState({});
   const [jsonErrors, setJsonErrors] = useState({});
@@ -158,16 +192,39 @@ function PropertiesPanel({
     !!selectedHeatingCurve && selectedHeatingCurve.parentId === node?.id;
 
   const activeData = isHeatingCurveSelected ? node?.data?.heating_curve : node?.data;
-  const activeProperties = isHeatingCurveSelected
-    ? HEATING_CURVE_PROPERTIES
-    : properties;
+  const activeProperties = useMemo(
+    () =>
+      getPropertyEntries(activeData, {
+        includeLabel: isHeatingCurveSelected,
+      }),
+    [activeData, isHeatingCurveSelected]
+  );
+
+  const childGroups = useMemo(() => {
+    if (!node) return [];
+    const childIds = edges
+      .filter((edge) => edge.source === node.id)
+      .map((edge) => edge.target);
+    const grouped = childIds.reduce((acc, childId) => {
+      const childNode = nodes.find((item) => item.id === childId);
+      if (!childNode) return acc;
+      const typeLabel = BLOCK_LABELS[childNode.type] || "Block";
+      if (!acc[typeLabel]) acc[typeLabel] = [];
+      acc[typeLabel].push(childNode);
+      return acc;
+    }, {});
+    return Object.entries(grouped).map(([label, items]) => ({
+      label,
+      items,
+    }));
+  }, [edges, node, nodes]);
 
   useEffect(() => {
     if (!node) return;
     const nextDrafts = {};
     const nextErrors = {};
     activeProperties.forEach((prop) => {
-      if (prop.type === "list" || prop.type === "object") {
+      if (prop.type === "object") {
         const fallback = getJsonFallback(prop.type);
         nextDrafts[prop.key] = stringifyJsonValue(activeData?.[prop.key], fallback);
         nextErrors[prop.key] = "";
@@ -230,6 +287,18 @@ function PropertiesPanel({
     }
   };
 
+  const handleDeleteProperty = (key) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${formatPropertyLabel(key)}"?`
+    );
+    if (!confirmed) return;
+    if (isHeatingCurveSelected) {
+      onDeleteHeatingCurveProperty(node.id, key);
+    } else {
+      onDeleteProperty(node.id, key);
+    }
+  };
+
   return (
     <aside className="app__side-panel">
       <div className="app__side-panel-header">
@@ -273,69 +342,143 @@ function PropertiesPanel({
             Select Heating Curve
           </button>
         )}
+        {!isHeatingCurveSelected && childGroups.length > 0 && (
+          <div className="app__side-panel-section">
+            <div className="app__side-panel-section-title">Hierarchy</div>
+            {childGroups.map((group) => (
+              <div key={group.label} className="app__side-panel-field">
+                <label htmlFor={`child-${group.label}`}>{group.label} Children</label>
+                <select
+                  id={`child-${group.label}`}
+                  value=""
+                  onChange={(event) => {
+                    const selectedId = event.target.value;
+                    if (selectedId) onSelectNode?.(selectedId);
+                  }}
+                >
+                  <option value="" disabled>
+                    Select a {group.label}
+                  </option>
+                  {group.items.map((child) => (
+                    <option key={child.id} value={child.id}>
+                      {child.data?.label ?? child.id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+        )}
         {activeProperties.length === 0 ? (
           <div className="app__side-panel-empty">
             No editable properties for this block.
           </div>
         ) : (
-          activeProperties.map((prop) => (
-            <div key={prop.key} className="app__side-panel-field">
-              <label htmlFor={`field-${prop.key}`}>{prop.label}</label>
-              {prop.type === "textarea" ? (
-                <textarea
-                  id={`field-${prop.key}`}
-                  value={activeData?.[prop.key] || ""}
-                  onChange={(event) =>
-                    isHeatingCurveSelected
-                      ? onUpdateHeatingCurveProperty(node.id, prop.key, event.target.value)
-                      : onUpdateProperty(node.id, prop.key, event.target.value)
-                  }
-                  placeholder={prop.placeholder || ""}
-                  rows={3}
-                />
-              ) : prop.type === "number" ? (
-                <input
-                  id={`field-${prop.key}`}
-                  type="number"
-                  value={activeData?.[prop.key] ?? ""}
-                  onChange={(event) =>
-                    isHeatingCurveSelected
-                      ? onUpdateHeatingCurveProperty(node.id, prop.key, event.target.value)
-                      : onUpdateProperty(node.id, prop.key, event.target.value)
-                  }
-                  placeholder={prop.placeholder || ""}
-                />
-              ) : prop.type === "list" || prop.type === "object" ? (
-                <>
-                  <textarea
-                    id={`field-${prop.key}`}
-                    value={draftValues[prop.key] ?? ""}
-                    onChange={(event) => handleJsonChange(prop.key, event.target.value)}
-                    onBlur={() => handleJsonBlur(prop.key, prop.type)}
-                    placeholder="Enter JSON"
-                    rows={5}
+          activeProperties.map((prop) => {
+            const fieldId = `field-${prop.key}`;
+            const value = activeData?.[prop.key];
+            const handleChange = (nextValue) =>
+              isHeatingCurveSelected
+                ? onUpdateHeatingCurveProperty(node.id, prop.key, nextValue)
+                : onUpdateProperty(node.id, prop.key, nextValue);
+
+            return (
+              <div key={prop.key} className="app__side-panel-field">
+                <div className="app__side-panel-field-header">
+                  <label htmlFor={fieldId}>{prop.label}</label>
+                  <button
+                    type="button"
+                    className="app__side-panel-delete"
+                    onClick={() => handleDeleteProperty(prop.key)}
+                  >
+                    Delete
+                  </button>
+                </div>
+                {prop.type === "number" ? (
+                  <input
+                    id={fieldId}
+                    type="number"
+                    value={value ?? ""}
+                    onChange={(event) => handleChange(event.target.value)}
+                    placeholder="0"
                   />
-                  {jsonErrors[prop.key] ? (
-                    <span className="app__side-panel-error">{jsonErrors[prop.key]}</span>
-                  ) : (
-                    <span className="app__side-panel-hint">Edit as JSON.</span>
-                  )}
-                </>
-              ) : (
-                <input
-                  id={`field-${prop.key}`}
-                  type="text"
-                  value={activeData?.[prop.key] || ""}
-                  onChange={(event) =>
-                    isHeatingCurveSelected
-                      ? onUpdateHeatingCurveProperty(node.id, prop.key, event.target.value)
-                      : onUpdateProperty(node.id, prop.key, event.target.value)
-                  }
-                  placeholder={prop.placeholder || ""}
-                />
-              )}
-            </div>
-          ))
+                ) : prop.type === "boolean" ? (
+                  <label className="app__side-panel-toggle">
+                    <input
+                      id={fieldId}
+                      type="checkbox"
+                      checked={Boolean(value)}
+                      onChange={(event) => handleChange(event.target.checked)}
+                    />
+                    <span>Enabled</span>
+                  </label>
+                ) : prop.type === "list" ? (
+                  <select
+                    id={fieldId}
+                    value=""
+                    onChange={(event) => {
+                      const index = Number(event.target.value);
+                      if (!Number.isNaN(index)) {
+                        const nextValue = value?.[index];
+                        handleChange(nextValue);
+                        const nextNodeId = resolveNodeIdFromOption(nextValue);
+                        if (nextNodeId) {
+                          onSelectNode?.(nextNodeId);
+                        }
+                      }
+                    }}
+                    disabled={!Array.isArray(value) || value.length === 0}
+                  >
+                    <option value="" disabled>
+                      {Array.isArray(value) && value.length > 0
+                        ? "Select an item"
+                        : "No options"}
+                    </option>
+                    {Array.isArray(value)
+                      ? value.map((option, index) => {
+                          const optionLabel =
+                            option?.label ??
+                            option?.name ??
+                            option?.id ??
+                            (typeof option === "string" || typeof option === "number"
+                              ? option
+                              : `Item ${index + 1}`);
+                          return (
+                            <option key={`${prop.key}-${index}`} value={index}>
+                              {optionLabel}
+                            </option>
+                          );
+                        })
+                      : null}
+                  </select>
+                ) : prop.type === "object" ? (
+                  <>
+                    <textarea
+                      id={fieldId}
+                      value={draftValues[prop.key] ?? ""}
+                      onChange={(event) => handleJsonChange(prop.key, event.target.value)}
+                      onBlur={() => handleJsonBlur(prop.key, prop.type)}
+                      placeholder="Enter JSON"
+                      rows={5}
+                    />
+                    {jsonErrors[prop.key] ? (
+                      <span className="app__side-panel-error">{jsonErrors[prop.key]}</span>
+                    ) : (
+                      <span className="app__side-panel-hint">Edit as JSON.</span>
+                    )}
+                  </>
+                ) : (
+                  <input
+                    id={fieldId}
+                    type="text"
+                    value={value ?? ""}
+                    onChange={(event) => handleChange(event.target.value)}
+                    placeholder="Enter value"
+                  />
+                )}
+              </div>
+            );
+          })
         )}
       </div>
     </aside>
@@ -545,6 +688,27 @@ function FlowCanvas() {
     [setNodes]
   );
 
+  const deleteNodeProperty = useCallback(
+    (id, property) => {
+      setNodes((prev) =>
+        prev.map((node) =>
+          node.id === id
+            ? {
+                ...node,
+                data: Object.fromEntries(
+                  Object.entries(node.data ?? {}).filter(([key]) => key !== property)
+                ),
+              }
+            : node
+        )
+      );
+      if (property === "heating_curve") {
+        setSelectedHeatingCurve(null);
+      }
+    },
+    [setNodes]
+  );
+
   const updateHeatingCurveProperty = useCallback(
     (id, property, value) => {
       setNodes((prev) =>
@@ -565,6 +729,44 @@ function FlowCanvas() {
       );
     },
     [setNodes]
+  );
+
+  const deleteHeatingCurveProperty = useCallback(
+    (id, property) => {
+      setNodes((prev) =>
+        prev.map((node) =>
+          node.id === id
+            ? {
+                ...node,
+                data: {
+                  ...node.data,
+                  heating_curve: Object.fromEntries(
+                    Object.entries(node.data?.heating_curve ?? {}).filter(
+                      ([key]) => key !== property
+                    )
+                  ),
+                },
+              }
+            : node
+        )
+      );
+    },
+    [setNodes]
+  );
+
+  const selectNodeById = useCallback(
+    (nodeId) => {
+      setNodes((prev) =>
+        prev.map((node) => ({
+          ...node,
+          selected: node.id === nodeId,
+        }))
+      );
+      setIsPanelCollapsed(false);
+      setSelectedHeatingCurve(null);
+      closeContextMenu();
+    },
+    [closeContextMenu, setNodes]
   );
 
   const closeContextMenu = useCallback(() => {
@@ -823,11 +1025,6 @@ function FlowCanvas() {
     }
   }, [selectedHeatingCurve, selectedNode]);
 
-  const selectedProperties = useMemo(
-    () => (selectedNode ? NODE_PROPERTIES[selectedNode.type] || [] : []),
-    [selectedNode]
-  );
-
   return (
     <div className="app">
       <header className="app__header">
@@ -1030,9 +1227,11 @@ function FlowCanvas() {
         ) : null}
         <PropertiesPanel
           node={selectedNode}
-          properties={selectedProperties}
+          nodes={nodes}
+          edges={edges}
           onUpdateLabel={updateNodeLabel}
           onUpdateProperty={updateNodeProperty}
+          onDeleteProperty={deleteNodeProperty}
           isCollapsed={isPanelCollapsed && !selectedNode}
           onToggleCollapse={() => setIsPanelCollapsed((prev) => !prev)}
           selectedHeatingCurve={selectedHeatingCurve}
@@ -1048,6 +1247,8 @@ function FlowCanvas() {
           }}
           onClearHeatingCurveSelection={() => setSelectedHeatingCurve(null)}
           onUpdateHeatingCurveProperty={updateHeatingCurveProperty}
+          onDeleteHeatingCurveProperty={deleteHeatingCurveProperty}
+          onSelectNode={selectNodeById}
         />
       </main>
     </div>

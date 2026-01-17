@@ -280,16 +280,18 @@ def process_yaml_to_graph(yaml_data: Dict) -> Dict:
     building = yaml_data["building"]
     building_name = building.get("name", "Building")
     building_id = "building-1"
+    building_properties = {
+        "label": building_name,
+        **building
+    }
+    building_properties.setdefault("name", building_name)
     
     # Create building node
     nodes.append({
         "id": building_id,
         "type": "building",
         "position": None,
-        "properties": {
-            "label": building_name,
-            "description": f"Building with {len(building.get('hot_water_loops', []))} hot water loops"
-        }
+        "properties": building_properties
     })
     
     # Process hot water loops
@@ -361,11 +363,8 @@ def process_yaml_to_graph(yaml_data: Dict) -> Dict:
             "position": None,
             "properties": {
                 "label": loop_name,
-                "ahus": len(loop_data.get("ahus", [])),
-                "boilers": len(loop_data.get("boilers", [])),
-                "downstream_loops": len(loop_data.get("downstream_loops", [])),
-                "heating_curves": len(loop_data.get("heating_curves", [])),
-                "heating_curve": heating_curve_obj
+                **loop_data,
+                "heating_curve": heating_curve_obj,
             }
         })
         

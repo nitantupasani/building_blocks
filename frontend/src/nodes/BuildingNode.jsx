@@ -1,13 +1,6 @@
 import { memo } from "react";
 import BaseNode from "./BaseNode.jsx";
 
-export const PROPERTIES = [
-  { key: "address", label: "Address", type: "text", placeholder: "Building address..." },
-  { key: "floors", label: "Floors", type: "number", placeholder: "Number of floors" },
-  { key: "area", label: "Area (sqft)", type: "number", placeholder: "Total area" },
-  { key: "description", label: "Description", type: "textarea", placeholder: "Building details..." },
-];
-
 function BuildingNode(props) {
   return <BaseNode {...props} color="#94a3b8" />;
 }

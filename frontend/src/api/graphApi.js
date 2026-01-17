@@ -114,11 +114,20 @@ export const transformToBackend = (nodes, edges) => {
     properties: {
       label: node.data.label,
       ...Object.fromEntries(
-        Object.entries(node.data).filter(([key]) => 
-          !['isEditing', 'blockType', 'selected', 
-            'onChangeLabel', 'onFinishEdit', 'onPropertyChange'].includes(key)
+        Object.entries(node.data).filter(
+          ([key]) =>
+            ![
+              "isEditing",
+              "blockType",
+              "selected",
+              "heatingCurveSelected",
+              "onChangeLabel",
+              "onFinishEdit",
+              "onSelectHeatingCurve",
+              "onPropertyChange",
+            ].includes(key)
         )
-      )
+      ),
     }
   }));
 
