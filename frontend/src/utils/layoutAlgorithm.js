@@ -70,16 +70,28 @@ export function calculateTreeLayout(nodes, edges) {
     return memo[nodeId];
   };
 
+  // Pre-calculate max node height per level for consistent vertical alignment
+  const levelHeights = {};
+  const recordLevelHeights = (nodeId, level = 0) => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+    const nodeSize = getNodeSize(node.type);
+    levelHeights[level] = Math.max(levelHeights[level] || 0, nodeSize.height);
+
+    (children[nodeId] || []).forEach(childId => recordLevelHeights(childId, level + 1));
+  };
+
+  roots.forEach(rootId => recordLevelHeights(rootId));
+
   // Position nodes using DFS
   const positioned = {};
-  const levels = {};
 
   const positionSubtree = (nodeId, x, y, level = 0) => {
     const node = nodes.find(n => n.id === nodeId);
     if (!node || positioned[nodeId]) return;
 
     const nodeSize = getNodeSize(node.type);
-    levels[level] = Math.max(levels[level] || 0, nodeSize.height);
+    const levelHeight = levelHeights[level] || nodeSize.height;
 
     // Position current node centered at x
     positioned[nodeId] = {
@@ -107,7 +119,7 @@ export function calculateTreeLayout(nodes, edges) {
       positionSubtree(
         childId, 
         childCenterX, 
-        y + levels[level] + VERTICAL_SPACING,
+        y + levelHeight + VERTICAL_SPACING,
         level + 1
       );
       
