@@ -11,14 +11,14 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 
-import BuildingNode from "./nodes/BuildingNode.jsx";
-import PrimaryHWNode from "./nodes/PrimaryHWNode.jsx";
-import PrimaryCHWNode from "./nodes/PrimaryCHWNode.jsx";
-import SecondaryHWNode from "./nodes/SecondaryHWNode.jsx";
-import SecondaryCHWNode from "./nodes/SecondaryCHWNode.jsx";
-import TertiaryHWNode from "./nodes/TertiaryHWNode.jsx";
-import TertiaryCHWNode from "./nodes/TertiaryCHWNode.jsx";
-import SensorNode from "./nodes/SensorNode.jsx";
+import BuildingNode, { PROPERTIES as BUILDING_PROPERTIES } from "./nodes/BuildingNode.jsx";
+import PrimaryHWNode, { PROPERTIES as PRIMARY_HW_PROPERTIES } from "./nodes/PrimaryHWNode.jsx";
+import PrimaryCHWNode, { PROPERTIES as PRIMARY_CHW_PROPERTIES } from "./nodes/PrimaryCHWNode.jsx";
+import SecondaryHWNode, { PROPERTIES as SECONDARY_HW_PROPERTIES } from "./nodes/SecondaryHWNode.jsx";
+import SecondaryCHWNode, { PROPERTIES as SECONDARY_CHW_PROPERTIES } from "./nodes/SecondaryCHWNode.jsx";
+import TertiaryHWNode, { PROPERTIES as TERTIARY_HW_PROPERTIES } from "./nodes/TertiaryHWNode.jsx";
+import TertiaryCHWNode, { PROPERTIES as TERTIARY_CHW_PROPERTIES } from "./nodes/TertiaryCHWNode.jsx";
+import SensorNode, { PROPERTIES as SENSOR_PROPERTIES } from "./nodes/SensorNode.jsx";
 import { api, transformToReactFlow, transformToBackend } from "./api/graphApi.js";
 import { calculateTreeLayout } from "./utils/layoutAlgorithm.js";
 import "./App.css";
@@ -32,6 +32,28 @@ const nodeTypes = {
   "tertiary-hw": TertiaryHWNode,
   "tertiary-chw": TertiaryCHWNode,
   sensor: SensorNode,
+};
+
+const NODE_PROPERTIES = {
+  building: BUILDING_PROPERTIES,
+  "primary-hw": PRIMARY_HW_PROPERTIES,
+  "primary-chw": PRIMARY_CHW_PROPERTIES,
+  "secondary-hw": SECONDARY_HW_PROPERTIES,
+  "secondary-chw": SECONDARY_CHW_PROPERTIES,
+  "tertiary-hw": TERTIARY_HW_PROPERTIES,
+  "tertiary-chw": TERTIARY_CHW_PROPERTIES,
+  sensor: SENSOR_PROPERTIES,
+};
+
+const BLOCK_LABELS = {
+  building: "Building",
+  "primary-hw": "Primary HW Loop",
+  "primary-chw": "Primary CHW Loop",
+  "secondary-hw": "Secondary HW Loop",
+  "secondary-chw": "Secondary CHW Loop",
+  "tertiary-hw": "Tertiary HW Loop",
+  "tertiary-chw": "Tertiary CHW Loop",
+  sensor: "Sensor",
 };
 
 // Helper function to get size for a block type
@@ -50,7 +72,6 @@ const initialNodes = [
     position: { x: 120, y: 80 },
     data: {
       label: "Building",
-      isExpanded: false,
       blockType: "building",
     },
     style: { ...DEFAULT_NODE_SIZE },
@@ -106,10 +127,167 @@ const findNonOverlappingTopLeft = (desiredTopLeft, size, existingNodes) => {
   return desiredTopLeft;
 };
 
+const stringifyJsonValue = (value, fallback) =>
+  JSON.stringify(value ?? fallback, null, 2);
+
+const getJsonFallback = (type) => (type === "list" ? [] : {});
+
+function PropertiesPanel({
+  node,
+  properties,
+  onUpdateLabel,
+  onUpdateProperty,
+  isCollapsed,
+  onToggleCollapse,
+}) {
+  const [draftValues, setDraftValues] = useState({});
+  const [jsonErrors, setJsonErrors] = useState({});
+
+  useEffect(() => {
+    if (!node) return;
+    const nextDrafts = {};
+    const nextErrors = {};
+    properties.forEach((prop) => {
+      if (prop.type === "list" || prop.type === "object") {
+        const fallback = getJsonFallback(prop.type);
+        nextDrafts[prop.key] = stringifyJsonValue(node.data?.[prop.key], fallback);
+        nextErrors[prop.key] = "";
+      }
+    });
+    setDraftValues(nextDrafts);
+    setJsonErrors(nextErrors);
+  }, [node, properties]);
+
+  if (!node && isCollapsed) {
+    return (
+      <aside className="app__side-panel app__side-panel--collapsed">
+        <button
+          type="button"
+          className="app__side-panel-tab"
+          onClick={onToggleCollapse}
+        >
+          Properties
+        </button>
+      </aside>
+    );
+  }
+
+  if (!node) {
+    return (
+      <aside className="app__side-panel app__side-panel--empty">
+        <div className="app__side-panel-empty">
+          Select a block to edit its properties.
+        </div>
+        <button
+          type="button"
+          className="app__side-panel-collapse"
+          onClick={onToggleCollapse}
+        >
+          Collapse
+        </button>
+      </aside>
+    );
+  }
+
+  const handleJsonChange = (key, value) => {
+    setDraftValues((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleJsonBlur = (key, type) => {
+    const rawValue = draftValues[key] ?? "";
+    try {
+      const parsed = rawValue ? JSON.parse(rawValue) : getJsonFallback(type);
+      onUpdateProperty(node.id, key, parsed);
+      setJsonErrors((prev) => ({ ...prev, [key]: "" }));
+    } catch (error) {
+      setJsonErrors((prev) => ({
+        ...prev,
+        [key]: "Invalid JSON. Please check your formatting.",
+      }));
+    }
+  };
+
+  return (
+    <aside className="app__side-panel">
+      <div className="app__side-panel-header">
+        <div>
+          <div className="app__side-panel-title">
+            {BLOCK_LABELS[node.type] || "Block"}
+          </div>
+          <div className="app__side-panel-subtitle">ID: {node.id}</div>
+        </div>
+      </div>
+      <div className="app__side-panel-body">
+        <div className="app__side-panel-field">
+          <label htmlFor="block-label">Label</label>
+          <input
+            id="block-label"
+            type="text"
+            value={node.data?.label ?? ""}
+            onChange={(event) => onUpdateLabel(node.id, event.target.value)}
+            placeholder="Block label"
+          />
+        </div>
+        {properties.length === 0 ? (
+          <div className="app__side-panel-empty">
+            No editable properties for this block.
+          </div>
+        ) : (
+          properties.map((prop) => (
+            <div key={prop.key} className="app__side-panel-field">
+              <label htmlFor={`field-${prop.key}`}>{prop.label}</label>
+              {prop.type === "textarea" ? (
+                <textarea
+                  id={`field-${prop.key}`}
+                  value={node.data?.[prop.key] || ""}
+                  onChange={(event) => onUpdateProperty(node.id, prop.key, event.target.value)}
+                  placeholder={prop.placeholder || ""}
+                  rows={3}
+                />
+              ) : prop.type === "number" ? (
+                <input
+                  id={`field-${prop.key}`}
+                  type="number"
+                  value={node.data?.[prop.key] ?? ""}
+                  onChange={(event) => onUpdateProperty(node.id, prop.key, event.target.value)}
+                  placeholder={prop.placeholder || ""}
+                />
+              ) : prop.type === "list" || prop.type === "object" ? (
+                <>
+                  <textarea
+                    id={`field-${prop.key}`}
+                    value={draftValues[prop.key] ?? ""}
+                    onChange={(event) => handleJsonChange(prop.key, event.target.value)}
+                    onBlur={() => handleJsonBlur(prop.key, prop.type)}
+                    placeholder="Enter JSON"
+                    rows={5}
+                  />
+                  {jsonErrors[prop.key] ? (
+                    <span className="app__side-panel-error">{jsonErrors[prop.key]}</span>
+                  ) : (
+                    <span className="app__side-panel-hint">Edit as JSON.</span>
+                  )}
+                </>
+              ) : (
+                <input
+                  id={`field-${prop.key}`}
+                  type="text"
+                  value={node.data?.[prop.key] || ""}
+                  onChange={(event) => onUpdateProperty(node.id, prop.key, event.target.value)}
+                  placeholder={prop.placeholder || ""}
+                />
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    </aside>
+  );
+}
+
 function FlowCanvas() {
   const reactFlow = useReactFlow();
   const idRef = useRef(2);
-  const blockCountRef = useRef(1);
   const wrapperRef = useRef(null);
   const saveTimeoutRef = useRef(null);
 
@@ -121,6 +299,7 @@ function FlowCanvas() {
 
   const [editingNodeId, setEditingNodeId] = useState(null);
   const [contextMenu, setContextMenu] = useState(null);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);
 
   const nodeTypesMemo = useMemo(() => nodeTypes, []);
 
@@ -289,33 +468,6 @@ function FlowCanvas() {
     setEditingNodeId(null);
   }, []);
 
-  const toggleNodeExpand = useCallback(
-    (id) => {
-      setNodes((prev) =>
-        prev.map((node) => {
-          if (node.id !== id) return node;
-          
-          const isExpanded = !node.data.isExpanded;
-          const blockSize = getBlockSize(node.data.blockType);
-          const newHeight = isExpanded ? blockSize.height * 2.5 : blockSize.height;
-          
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              isExpanded,
-            },
-            style: {
-              ...node.style,
-              height: newHeight,
-            },
-          };
-        })
-      );
-    },
-    [setNodes]
-  );
-
   const updateNodeProperty = useCallback(
     (id, property, value) => {
       setNodes((prev) =>
@@ -356,7 +508,7 @@ function FlowCanvas() {
                 style: {
                   ...node.style,
                   width: newSize.width,
-                  height: node.data.isExpanded ? newSize.height * 2.5 : newSize.height,
+                  height: newSize.height,
                 },
               }
             : node
@@ -390,20 +542,7 @@ function FlowCanvas() {
 
   const createNodeAtPosition = useCallback(
     (position, blockType = "building") => {
-      const blockNumber = idRef.current;
       const id = String(idRef.current++);
-      const nextBlockNumber = blockCountRef.current++;
-
-      const blockLabels = {
-        building: "Building",
-        "primary-hw": "Primary HW Loop",
-        "primary-chw": "Primary CHW Loop",
-        "secondary-hw": "Secondary HW Loop",
-        "secondary-chw": "Secondary CHW Loop",
-        "tertiary-hw": "Tertiary HW Loop",
-        "tertiary-chw": "Tertiary CHW Loop",
-        sensor: "Sensor",
-      };
 
       const blockSize = getBlockSize(blockType);
 
@@ -426,8 +565,7 @@ function FlowCanvas() {
           type: blockType,
           position: placedTopLeft,
           data: {
-            label: blockLabels[blockType] || "Block",
-            isExpanded: false,
+            label: BLOCK_LABELS[blockType] || "Block",
             blockType,
           },
           style: { ...blockSize },
@@ -470,6 +608,15 @@ function FlowCanvas() {
   const onPaneClick = useCallback(
     (event) => {
       closeContextMenu();
+      if (event.detail === 1) {
+        setNodes((prev) =>
+          prev.map((node) => ({
+            ...node,
+            selected: false,
+          }))
+        );
+        setIsPanelCollapsed(true);
+      }
       if (event.detail !== 2) return;
 
       event.preventDefault();
@@ -489,7 +636,7 @@ function FlowCanvas() {
 
       createNodeAtPosition(flowPos);
     },
-    [closeContextMenu, createNodeAtPosition, reactFlow]
+    [closeContextMenu, createNodeAtPosition, reactFlow, setIsPanelCollapsed, setNodes]
   );
 
   const onNodeDoubleClick = useCallback((_, node) => {
@@ -546,11 +693,25 @@ function FlowCanvas() {
           selected: node.selected,
           onChangeLabel: updateNodeLabel,
           onFinishEdit: finishEditing,
-          onToggleExpand: toggleNodeExpand,
-          onPropertyChange: updateNodeProperty,
         },
       })),
-    [editingNodeId, finishEditing, nodes, updateNodeLabel, toggleNodeExpand, updateNodeProperty]
+    [editingNodeId, finishEditing, nodes, updateNodeLabel]
+  );
+
+  const selectedNode = useMemo(
+    () => nodes.find((node) => node.selected),
+    [nodes]
+  );
+
+  useEffect(() => {
+    if (selectedNode) {
+      setIsPanelCollapsed(false);
+    }
+  }, [selectedNode]);
+
+  const selectedProperties = useMemo(
+    () => (selectedNode ? NODE_PROPERTIES[selectedNode.type] || [] : []),
+    [selectedNode]
   );
 
   return (
@@ -753,6 +914,14 @@ function FlowCanvas() {
             </button>
           </div>
         ) : null}
+        <PropertiesPanel
+          node={selectedNode}
+          properties={selectedProperties}
+          onUpdateLabel={updateNodeLabel}
+          onUpdateProperty={updateNodeProperty}
+          isCollapsed={isPanelCollapsed && !selectedNode}
+          onToggleCollapse={() => setIsPanelCollapsed((prev) => !prev)}
+        />
       </main>
     </div>
   );

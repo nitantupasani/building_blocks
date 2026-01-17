@@ -1,7 +1,7 @@
 import { memo } from "react";
 import BaseNode from "./BaseNode.jsx";
 
-const PROPERTIES = [
+export const PROPERTIES = [
   { key: "sensorType", label: "Type", type: "text", placeholder: "Temperature, Pressure, etc." },
   { key: "unit", label: "Unit", type: "text", placeholder: "°F, PSI, etc." },
   { key: "range", label: "Range", type: "text", placeholder: "0-100" },
@@ -9,7 +9,7 @@ const PROPERTIES = [
 ];
 
 function SensorNode(props) {
-  return <BaseNode {...props} color="#22c55e" properties={PROPERTIES} />;
+  return <BaseNode {...props} color="#22c55e" />;
 }
 
 const MemoizedSensorNode = memo(SensorNode);

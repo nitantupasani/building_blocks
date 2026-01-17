@@ -85,7 +85,6 @@ export const transformToReactFlow = (backendData) => {
     position: node.position || { x: 0, y: 0 },
     data: {
       label: node.properties.label || node.type,
-      isExpanded: false,
       blockType: node.type,
       ...node.properties
     },
@@ -116,8 +115,8 @@ export const transformToBackend = (nodes, edges) => {
       label: node.data.label,
       ...Object.fromEntries(
         Object.entries(node.data).filter(([key]) => 
-          !['isEditing', 'isExpanded', 'blockType', 'selected', 
-            'onChangeLabel', 'onFinishEdit', 'onToggleExpand', 'onPropertyChange'].includes(key)
+          !['isEditing', 'blockType', 'selected', 
+            'onChangeLabel', 'onFinishEdit', 'onPropertyChange'].includes(key)
         )
       )
     }

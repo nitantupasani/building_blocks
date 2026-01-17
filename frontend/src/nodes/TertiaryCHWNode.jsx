@@ -1,7 +1,7 @@
 import { memo } from "react";
 import BaseNode from "./BaseNode.jsx";
 
-const PROPERTIES = [
+export const PROPERTIES = [
   { key: "sensors_count", label: "Sensors Count", type: "number", placeholder: "0" },
   { key: "equipment", label: "Equipment", type: "text", placeholder: "Equipment" },
   { key: "sensors", label: "Sensors", type: "list" },
@@ -12,7 +12,7 @@ const PROPERTIES = [
 ];
 
 function TertiaryCHWNode(props) {
-  return <BaseNode {...props} color="#0ea5e9" properties={PROPERTIES} />;
+  return <BaseNode {...props} color="#0ea5e9" />;
 }
 
 const MemoizedTertiaryCHWNode = memo(TertiaryCHWNode);
