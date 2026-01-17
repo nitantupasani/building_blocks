@@ -293,3 +293,146 @@ body {
   background: #e2e8f0;
   margin: 4px 0;
 }
+
+.app__side-panel {
+  position: absolute;
+  top: 96px;
+  right: 16px;
+  bottom: 16px;
+  width: 320px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app__side-panel--collapsed {
+  width: 44px;
+  height: 140px;
+  bottom: auto;
+  padding: 0;
+  justify-content: center;
+  align-items: center;
+}
+
+.app__side-panel-tab {
+  height: 100%;
+  width: 100%;
+  border: none;
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  cursor: pointer;
+  border-radius: 12px;
+}
+
+.app__side-panel-tab:hover {
+  background: #e2e8f0;
+}
+
+.app__side-panel--empty {
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  text-align: center;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.app__side-panel-collapse {
+  margin-top: 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 12px;
+  background: #ffffff;
+  color: #475569;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.app__side-panel-collapse:hover {
+  background: #f1f5f9;
+}
+
+.app__side-panel-header {
+  padding: 16px 18px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.app__side-panel-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.app__side-panel-subtitle {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.app__side-panel-body {
+  padding: 16px 18px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.app__side-panel-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.app__side-panel-field label {
+  font-weight: 600;
+  color: #334155;
+}
+
+.app__side-panel-field input,
+.app__side-panel-field textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  color: #0f172a;
+  background: #ffffff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.app__side-panel-field input:focus,
+.app__side-panel-field textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.app__side-panel-hint {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.app__side-panel-error {
+  font-size: 11px;
+  color: #dc2626;
+}
+
+.app__side-panel-empty {
+  font-size: 13px;
+  color: #64748b;
+}
