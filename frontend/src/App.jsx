@@ -247,7 +247,7 @@ function PropertiesPanel({
             className="app__side-panel-link"
             onClick={onClearHeatingCurveSelection}
           >
-            Back to block
+            Back to loop properties
           </button>
         )}
       </div>

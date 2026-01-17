@@ -16,7 +16,7 @@ function HeatingCurveBlock({ parentId, heatingCurve, isSelected, onSelect }) {
         label: heatingCurve.label || "Heating Curve",
         blockType: "heating-curve",
       }}
-      color="#fbbf24"
+      color="#ffffff"
       className={`base-node__attached-curve heating-curve-block${isSelected ? " heating-curve-block--selected" : ""}`}
       showHandles={false}
       showResizer={false}
