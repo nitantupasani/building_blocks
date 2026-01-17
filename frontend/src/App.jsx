@@ -159,8 +159,20 @@ const getPropertyEntries = (data, { includeLabel } = { includeLabel: false }) =>
     }));
 };
 
+const resolveNodeIdFromOption = (option) => {
+  if (!option) return null;
+  if (typeof option === "string") return option;
+  if (typeof option === "number") return String(option);
+  if (typeof option === "object") {
+    return option.id ?? option.identifier ?? option.nodeId ?? null;
+  }
+  return null;
+};
+
 function PropertiesPanel({
   node,
+  nodes,
+  edges,
   onUpdateLabel,
   onUpdateProperty,
   onDeleteProperty,
@@ -171,6 +183,7 @@ function PropertiesPanel({
   onClearHeatingCurveSelection,
   onUpdateHeatingCurveProperty,
   onDeleteHeatingCurveProperty,
+  onSelectNode,
 }) {
   const [draftValues, setDraftValues] = useState({});
   const [jsonErrors, setJsonErrors] = useState({});
@@ -186,6 +199,25 @@ function PropertiesPanel({
       }),
     [activeData, isHeatingCurveSelected]
   );
+
+  const childGroups = useMemo(() => {
+    if (!node) return [];
+    const childIds = edges
+      .filter((edge) => edge.source === node.id)
+      .map((edge) => edge.target);
+    const grouped = childIds.reduce((acc, childId) => {
+      const childNode = nodes.find((item) => item.id === childId);
+      if (!childNode) return acc;
+      const typeLabel = BLOCK_LABELS[childNode.type] || "Block";
+      if (!acc[typeLabel]) acc[typeLabel] = [];
+      acc[typeLabel].push(childNode);
+      return acc;
+    }, {});
+    return Object.entries(grouped).map(([label, items]) => ({
+      label,
+      items,
+    }));
+  }, [edges, node, nodes]);
 
   useEffect(() => {
     if (!node) return;
@@ -310,6 +342,33 @@ function PropertiesPanel({
             Select Heating Curve
           </button>
         )}
+        {!isHeatingCurveSelected && childGroups.length > 0 && (
+          <div className="app__side-panel-section">
+            <div className="app__side-panel-section-title">Hierarchy</div>
+            {childGroups.map((group) => (
+              <div key={group.label} className="app__side-panel-field">
+                <label htmlFor={`child-${group.label}`}>{group.label} Children</label>
+                <select
+                  id={`child-${group.label}`}
+                  value=""
+                  onChange={(event) => {
+                    const selectedId = event.target.value;
+                    if (selectedId) onSelectNode?.(selectedId);
+                  }}
+                >
+                  <option value="" disabled>
+                    Select a {group.label}
+                  </option>
+                  {group.items.map((child) => (
+                    <option key={child.id} value={child.id}>
+                      {child.data?.label ?? child.id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+        )}
         {activeProperties.length === 0 ? (
           <div className="app__side-panel-empty">
             No editable properties for this block.
@@ -360,7 +419,12 @@ function PropertiesPanel({
                     onChange={(event) => {
                       const index = Number(event.target.value);
                       if (!Number.isNaN(index)) {
-                        handleChange(value?.[index]);
+                        const nextValue = value?.[index];
+                        handleChange(nextValue);
+                        const nextNodeId = resolveNodeIdFromOption(nextValue);
+                        if (nextNodeId) {
+                          onSelectNode?.(nextNodeId);
+                        }
                       }
                     }}
                     disabled={!Array.isArray(value) || value.length === 0}
@@ -688,6 +752,21 @@ function FlowCanvas() {
       );
     },
     [setNodes]
+  );
+
+  const selectNodeById = useCallback(
+    (nodeId) => {
+      setNodes((prev) =>
+        prev.map((node) => ({
+          ...node,
+          selected: node.id === nodeId,
+        }))
+      );
+      setIsPanelCollapsed(false);
+      setSelectedHeatingCurve(null);
+      closeContextMenu();
+    },
+    [closeContextMenu, setNodes]
   );
 
   const closeContextMenu = useCallback(() => {
@@ -1148,6 +1227,8 @@ function FlowCanvas() {
         ) : null}
         <PropertiesPanel
           node={selectedNode}
+          nodes={nodes}
+          edges={edges}
           onUpdateLabel={updateNodeLabel}
           onUpdateProperty={updateNodeProperty}
           onDeleteProperty={deleteNodeProperty}
@@ -1167,6 +1248,7 @@ function FlowCanvas() {
           onClearHeatingCurveSelection={() => setSelectedHeatingCurve(null)}
           onUpdateHeatingCurveProperty={updateHeatingCurveProperty}
           onDeleteHeatingCurveProperty={deleteHeatingCurveProperty}
+          onSelectNode={selectNodeById}
         />
       </main>
     </div>

@@ -418,6 +418,20 @@ body {
   gap: 16px;
 }
 
+.app__side-panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.app__side-panel-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+}
+
 .app__side-panel-field {
   display: flex;
   flex-direction: column;
