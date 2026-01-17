@@ -25,8 +25,9 @@ export function calculateTreeLayout(nodes, edges) {
   }
 
   // Node dimensions by type
+  const SCALE = 1.4; // match graphApi scale
   const getNodeSize = (type) => {
-    const sizes = {
+    const base = {
       building: { width: 240, height: 140 },
       'primary-hw': { width: 190, height: 110 },
       'primary-chw': { width: 190, height: 110 },
@@ -36,12 +37,13 @@ export function calculateTreeLayout(nodes, edges) {
       'tertiary-chw': { width: 135, height: 75 },
       sensor: { width: 95, height: 60 }
     };
-    return sizes[type] || { width: 150, height: 100 };
+    const s = base[type] || { width: 150, height: 100 };
+    return { width: Math.round(s.width * SCALE), height: Math.round(s.height * SCALE) };
   };
 
   // Layout configuration
-  const HORIZONTAL_SPACING = 80;
-  const VERTICAL_SPACING = 120;
+  const HORIZONTAL_SPACING = Math.round(80 * SCALE);
+  const VERTICAL_SPACING = Math.round(120 * SCALE);
 
   // Calculate subtree width (for centering)
   const calculateSubtreeWidth = (nodeId, memo = {}) => {

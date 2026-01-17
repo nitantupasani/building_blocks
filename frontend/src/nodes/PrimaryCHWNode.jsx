@@ -14,6 +14,6 @@ function PrimaryCHWNode(props) {
 }
 
 const MemoizedPrimaryCHWNode = memo(PrimaryCHWNode);
-MemoizedPrimaryCHWNode.size = { width: 190, height: 110 };
+MemoizedPrimaryCHWNode.size = { width: 266, height: 154 };
 
 export default MemoizedPrimaryCHWNode;

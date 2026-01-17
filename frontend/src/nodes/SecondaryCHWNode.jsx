@@ -13,6 +13,6 @@ function SecondaryCHWNode(props) {
 }
 
 const MemoizedSecondaryCHWNode = memo(SecondaryCHWNode);
-MemoizedSecondaryCHWNode.size = { width: 160, height: 90 };
+MemoizedSecondaryCHWNode.size = { width: 224, height: 126 };
 
 export default MemoizedSecondaryCHWNode;

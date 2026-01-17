@@ -1,6 +1,7 @@
 import { memo, useEffect, useRef } from "react";
 import { Handle, Position, NodeResizer } from "reactflow";
 import "./BaseNode.css";
+import HeatingCurveBlock from "./HeatingCurveBlock.jsx";
 
 function BaseNode({ id, data, color, properties = [] }) {
   const inputRef = useRef(null);
@@ -115,6 +116,33 @@ function BaseNode({ id, data, color, properties = [] }) {
                       <span className="base-node__list-empty">No items</span>
                     )}
                   </div>
+                ) : prop.type === "object" ? (
+                  <div className="base-node__object">
+                    {data?.[prop.key] ? (
+                      <div className="base-node__object-block">
+                        <div><strong>{data[prop.key].label || data[prop.key].label || 'Heating Curve'}</strong></div>
+                        <div>Equipment: {data[prop.key].equipment || 'N/A'}</div>
+                        <div>Sensors: {data[prop.key].sensors_count ?? 0}</div>
+                        {Array.isArray(data[prop.key].sensors) && data[prop.key].sensors.length > 0 && (
+                          <ul className="base-node__list-items">
+                            {data[prop.key].sensors.map((s, i) => (
+                              <li key={i} className="base-node__list-item">
+                                {typeof s === 'object' ? (
+                                  <div className="base-node__list-object">
+                                    {Object.entries(s).map(([k, v]) => (
+                                      <div key={k} className="base-node__list-field"><strong>{k}:</strong> {String(v)}</div>
+                                    ))}
+                                  </div>
+                                ) : String(s)}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="base-node__none">None</div>
+                    )}
+                  </div>
                 ) : (
                   <input
                     type="text"
@@ -129,6 +157,17 @@ function BaseNode({ id, data, color, properties = [] }) {
           </div>
         )}
       </div>
+
+      {/* Attached heating-curve visual block (shares wall with loop) */}
+      {data?.heating_curve && String(blockType).includes("hw") && (
+        <HeatingCurveBlock
+          parentId={id}
+          heatingCurve={data.heating_curve}
+          isParentExpanded={isExpanded}
+          onOpenHeatingCurve={data?.onOpenHeatingCurve}
+          onToggleParentExpand={data?.onToggleExpand}
+        />
+      )}
 
       <button
         className="base-node__expand-btn"

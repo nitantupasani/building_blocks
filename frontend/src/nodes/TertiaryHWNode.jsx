@@ -16,6 +16,6 @@ function TertiaryHWNode(props) {
 }
 
 const MemoizedTertiaryHWNode = memo(TertiaryHWNode);
-MemoizedTertiaryHWNode.size = { width: 135, height: 75 };
+MemoizedTertiaryHWNode.size = { width: 189, height: 105 };
 
 export default MemoizedTertiaryHWNode;

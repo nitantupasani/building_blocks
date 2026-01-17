@@ -13,6 +13,6 @@ function SensorNode(props) {
 }
 
 const MemoizedSensorNode = memo(SensorNode);
-MemoizedSensorNode.size = { width: 95, height: 60 };
+MemoizedSensorNode.size = { width: 133, height: 84 };
 
 export default MemoizedSensorNode;

@@ -667,6 +667,8 @@ function FlowCanvas() {
           elementsSelectable={true}
           reconnectRadius={20}
           deleteKeyCode={['Backspace', 'Delete']}
+          minZoom={0.005}
+          maxZoom={30}
           fitView
           fitViewOptions={{ padding: 0.2 }}
         >

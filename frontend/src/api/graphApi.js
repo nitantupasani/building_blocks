@@ -136,7 +136,9 @@ export const transformToBackend = (nodes, edges) => {
 
 // Helper to get node size
 const getNodeSize = (type) => {
-  const sizes = {
+  // Scale factor to proportionally enlarge all node boxes
+  const SCALE = 1.4;
+  const base = {
     building: { width: 240, height: 140 },
     'primary-hw': { width: 190, height: 110 },
     'primary-chw': { width: 190, height: 110 },
@@ -146,5 +148,7 @@ const getNodeSize = (type) => {
     'tertiary-chw': { width: 135, height: 75 },
     sensor: { width: 95, height: 60 }
   };
-  return sizes[type] || { width: 150, height: 100 };
+
+  const s = base[type] || { width: 150, height: 100 };
+  return { width: Math.round(s.width * SCALE), height: Math.round(s.height * SCALE) };
 };

@@ -13,6 +13,6 @@ function BuildingNode(props) {
 }
 
 const MemoizedBuildingNode = memo(BuildingNode);
-MemoizedBuildingNode.size = { width: 240, height: 140 };
+MemoizedBuildingNode.size = { width: 336, height: 196 };
 
 export default MemoizedBuildingNode;

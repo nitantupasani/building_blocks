@@ -16,6 +16,6 @@ function TertiaryCHWNode(props) {
 }
 
 const MemoizedTertiaryCHWNode = memo(TertiaryCHWNode);
-MemoizedTertiaryCHWNode.size = { width: 135, height: 75 };
+MemoizedTertiaryCHWNode.size = { width: 189, height: 105 };
 
 export default MemoizedTertiaryCHWNode;
