@@ -3,7 +3,15 @@ import { Handle, Position, NodeResizer } from "reactflow";
 import "./BaseNode.css";
 import HeatingCurveBlock from "./HeatingCurveBlock.jsx";
 
-function BaseNode({ id, data, color }) {
+function BaseNode({
+  id,
+  data,
+  color,
+  className = "",
+  showHandles = true,
+  showResizer = true,
+  onClick,
+}) {
   const inputRef = useRef(null);
   const label = data?.label ?? "Node";
   const isEditing = !!data?.isEditing;
@@ -18,6 +26,7 @@ function BaseNode({ id, data, color }) {
     "secondary-chw": "11px",
     "tertiary-hw": "10px",
     "tertiary-chw": "10px",
+    "heating-curve": "10px",
     sensor: "8px",
   };
 
@@ -31,16 +40,26 @@ function BaseNode({ id, data, color }) {
   }, [isEditing]);
 
   return (
-    <div className="base-node" style={{ backgroundColor: color }}>
-      <NodeResizer
-        minWidth={100}
-        minHeight={80}
-        isVisible={data?.selected}
-      />
-      <Handle position={Position.Top} id="top" />
-      <Handle position={Position.Left} id="left" />
-      <Handle position={Position.Right} id="right" />
-      <Handle position={Position.Bottom} id="bottom" />
+    <div
+      className={`base-node ${className}`.trim()}
+      style={{ backgroundColor: color }}
+      onClick={onClick}
+    >
+      {showResizer && (
+        <NodeResizer
+          minWidth={100}
+          minHeight={80}
+          isVisible={data?.selected}
+        />
+      )}
+      {showHandles && (
+        <>
+          <Handle position={Position.Top} id="top" />
+          <Handle position={Position.Left} id="left" />
+          <Handle position={Position.Right} id="right" />
+          <Handle position={Position.Bottom} id="bottom" />
+        </>
+      )}
 
       <div className="base-node__content">
         {isEditing ? (
@@ -67,7 +86,8 @@ function BaseNode({ id, data, color }) {
         <HeatingCurveBlock
           parentId={id}
           heatingCurve={data.heating_curve}
-          onOpenHeatingCurve={data?.onOpenHeatingCurve}
+          isSelected={data?.heatingCurveSelected}
+          onSelect={data?.onSelectHeatingCurve}
         />
       )}
     </div>

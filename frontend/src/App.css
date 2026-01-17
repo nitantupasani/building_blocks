@@ -361,6 +361,34 @@ body {
   background: #f1f5f9;
 }
 
+.app__side-panel-cta {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  color: #1e293b;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.app__side-panel-cta:hover {
+  background: #e2e8f0;
+}
+
+.app__side-panel-link {
+  border: none;
+  background: none;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.app__side-panel-link:hover {
+  text-decoration: underline;
+}
+
 .app__side-panel-header {
   padding: 16px 18px;
   border-bottom: 1px solid #e2e8f0;

@@ -56,6 +56,13 @@ const BLOCK_LABELS = {
   sensor: "Sensor",
 };
 
+const HEATING_CURVE_PROPERTIES = [
+  { key: "label", label: "Label", type: "text", placeholder: "Heating Curve" },
+  { key: "equipment", label: "Equipment", type: "text", placeholder: "Equipment" },
+  { key: "sensors_count", label: "Sensors Count", type: "number", placeholder: "0" },
+  { key: "sensors", label: "Sensors", type: "list" },
+];
+
 // Helper function to get size for a block type
 const getBlockSize = (blockType) => {
   const nodeComponent = nodeTypes[blockType];
@@ -139,24 +146,36 @@ function PropertiesPanel({
   onUpdateProperty,
   isCollapsed,
   onToggleCollapse,
+  selectedHeatingCurve,
+  onSelectHeatingCurve,
+  onClearHeatingCurveSelection,
+  onUpdateHeatingCurveProperty,
 }) {
   const [draftValues, setDraftValues] = useState({});
   const [jsonErrors, setJsonErrors] = useState({});
+
+  const isHeatingCurveSelected =
+    !!selectedHeatingCurve && selectedHeatingCurve.parentId === node?.id;
+
+  const activeData = isHeatingCurveSelected ? node?.data?.heating_curve : node?.data;
+  const activeProperties = isHeatingCurveSelected
+    ? HEATING_CURVE_PROPERTIES
+    : properties;
 
   useEffect(() => {
     if (!node) return;
     const nextDrafts = {};
     const nextErrors = {};
-    properties.forEach((prop) => {
+    activeProperties.forEach((prop) => {
       if (prop.type === "list" || prop.type === "object") {
         const fallback = getJsonFallback(prop.type);
-        nextDrafts[prop.key] = stringifyJsonValue(node.data?.[prop.key], fallback);
+        nextDrafts[prop.key] = stringifyJsonValue(activeData?.[prop.key], fallback);
         nextErrors[prop.key] = "";
       }
     });
     setDraftValues(nextDrafts);
     setJsonErrors(nextErrors);
-  }, [node, properties]);
+  }, [activeData, activeProperties, node]);
 
   if (!node && isCollapsed) {
     return (
@@ -197,7 +216,11 @@ function PropertiesPanel({
     const rawValue = draftValues[key] ?? "";
     try {
       const parsed = rawValue ? JSON.parse(rawValue) : getJsonFallback(type);
-      onUpdateProperty(node.id, key, parsed);
+      if (isHeatingCurveSelected) {
+        onUpdateHeatingCurveProperty(node.id, key, parsed);
+      } else {
+        onUpdateProperty(node.id, key, parsed);
+      }
       setJsonErrors((prev) => ({ ...prev, [key]: "" }));
     } catch (error) {
       setJsonErrors((prev) => ({
@@ -212,35 +235,61 @@ function PropertiesPanel({
       <div className="app__side-panel-header">
         <div>
           <div className="app__side-panel-title">
-            {BLOCK_LABELS[node.type] || "Block"}
+            {isHeatingCurveSelected
+              ? "Heating Curve"
+              : BLOCK_LABELS[node.type] || "Block"}
           </div>
           <div className="app__side-panel-subtitle">ID: {node.id}</div>
         </div>
+        {isHeatingCurveSelected && (
+          <button
+            type="button"
+            className="app__side-panel-link"
+            onClick={onClearHeatingCurveSelection}
+          >
+            Back to block
+          </button>
+        )}
       </div>
       <div className="app__side-panel-body">
-        <div className="app__side-panel-field">
-          <label htmlFor="block-label">Label</label>
-          <input
-            id="block-label"
-            type="text"
-            value={node.data?.label ?? ""}
-            onChange={(event) => onUpdateLabel(node.id, event.target.value)}
-            placeholder="Block label"
-          />
-        </div>
-        {properties.length === 0 ? (
+        {!isHeatingCurveSelected && (
+          <div className="app__side-panel-field">
+            <label htmlFor="block-label">Label</label>
+            <input
+              id="block-label"
+              type="text"
+              value={node.data?.label ?? ""}
+              onChange={(event) => onUpdateLabel(node.id, event.target.value)}
+              placeholder="Block label"
+            />
+          </div>
+        )}
+        {!isHeatingCurveSelected && node.data?.heating_curve && (
+          <button
+            type="button"
+            className="app__side-panel-cta"
+            onClick={() => onSelectHeatingCurve(node.id, node.data?.heating_curve?.id)}
+          >
+            Select Heating Curve
+          </button>
+        )}
+        {activeProperties.length === 0 ? (
           <div className="app__side-panel-empty">
             No editable properties for this block.
           </div>
         ) : (
-          properties.map((prop) => (
+          activeProperties.map((prop) => (
             <div key={prop.key} className="app__side-panel-field">
               <label htmlFor={`field-${prop.key}`}>{prop.label}</label>
               {prop.type === "textarea" ? (
                 <textarea
                   id={`field-${prop.key}`}
-                  value={node.data?.[prop.key] || ""}
-                  onChange={(event) => onUpdateProperty(node.id, prop.key, event.target.value)}
+                  value={activeData?.[prop.key] || ""}
+                  onChange={(event) =>
+                    isHeatingCurveSelected
+                      ? onUpdateHeatingCurveProperty(node.id, prop.key, event.target.value)
+                      : onUpdateProperty(node.id, prop.key, event.target.value)
+                  }
                   placeholder={prop.placeholder || ""}
                   rows={3}
                 />
@@ -248,8 +297,12 @@ function PropertiesPanel({
                 <input
                   id={`field-${prop.key}`}
                   type="number"
-                  value={node.data?.[prop.key] ?? ""}
-                  onChange={(event) => onUpdateProperty(node.id, prop.key, event.target.value)}
+                  value={activeData?.[prop.key] ?? ""}
+                  onChange={(event) =>
+                    isHeatingCurveSelected
+                      ? onUpdateHeatingCurveProperty(node.id, prop.key, event.target.value)
+                      : onUpdateProperty(node.id, prop.key, event.target.value)
+                  }
                   placeholder={prop.placeholder || ""}
                 />
               ) : prop.type === "list" || prop.type === "object" ? (
@@ -272,8 +325,12 @@ function PropertiesPanel({
                 <input
                   id={`field-${prop.key}`}
                   type="text"
-                  value={node.data?.[prop.key] || ""}
-                  onChange={(event) => onUpdateProperty(node.id, prop.key, event.target.value)}
+                  value={activeData?.[prop.key] || ""}
+                  onChange={(event) =>
+                    isHeatingCurveSelected
+                      ? onUpdateHeatingCurveProperty(node.id, prop.key, event.target.value)
+                      : onUpdateProperty(node.id, prop.key, event.target.value)
+                  }
                   placeholder={prop.placeholder || ""}
                 />
               )}
@@ -300,6 +357,7 @@ function FlowCanvas() {
   const [editingNodeId, setEditingNodeId] = useState(null);
   const [contextMenu, setContextMenu] = useState(null);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);
+  const [selectedHeatingCurve, setSelectedHeatingCurve] = useState(null);
 
   const nodeTypesMemo = useMemo(() => nodeTypes, []);
 
@@ -487,6 +545,28 @@ function FlowCanvas() {
     [setNodes]
   );
 
+  const updateHeatingCurveProperty = useCallback(
+    (id, property, value) => {
+      setNodes((prev) =>
+        prev.map((node) =>
+          node.id === id
+            ? {
+                ...node,
+                data: {
+                  ...node.data,
+                  heating_curve: {
+                    ...(node.data?.heating_curve ?? {}),
+                    [property]: value,
+                  },
+                },
+              }
+            : node
+        )
+      );
+    },
+    [setNodes]
+  );
+
   const closeContextMenu = useCallback(() => {
     setContextMenu(null);
   }, []);
@@ -616,6 +696,7 @@ function FlowCanvas() {
           }))
         );
         setIsPanelCollapsed(true);
+        setSelectedHeatingCurve(null);
       }
       if (event.detail !== 2) return;
 
@@ -636,7 +717,13 @@ function FlowCanvas() {
 
       createNodeAtPosition(flowPos);
     },
-    [closeContextMenu, createNodeAtPosition, reactFlow, setIsPanelCollapsed, setNodes]
+    [
+      closeContextMenu,
+      createNodeAtPosition,
+      reactFlow,
+      setIsPanelCollapsed,
+      setNodes,
+    ]
   );
 
   const onNodeDoubleClick = useCallback((_, node) => {
@@ -659,6 +746,7 @@ function FlowCanvas() {
           selected: item.id === node.id,
         }))
       );
+      setSelectedHeatingCurve(null);
 
       setContextMenu({
         nodeId: node.id,
@@ -691,11 +779,31 @@ function FlowCanvas() {
           ...node.data,
           isEditing: editingNodeId === node.id,
           selected: node.selected,
+          heatingCurveSelected:
+            selectedHeatingCurve?.parentId === node.id,
           onChangeLabel: updateNodeLabel,
           onFinishEdit: finishEditing,
+          onSelectHeatingCurve: (parentId, curveId) => {
+            setIsPanelCollapsed(false);
+            setSelectedHeatingCurve({ parentId, curveId });
+            setNodes((prev) =>
+              prev.map((item) => ({
+                ...item,
+                selected: item.id === parentId,
+              }))
+            );
+          },
         },
       })),
-    [editingNodeId, finishEditing, nodes, updateNodeLabel]
+    [
+      editingNodeId,
+      finishEditing,
+      nodes,
+      selectedHeatingCurve,
+      setIsPanelCollapsed,
+      setNodes,
+      updateNodeLabel,
+    ]
   );
 
   const selectedNode = useMemo(
@@ -708,6 +816,12 @@ function FlowCanvas() {
       setIsPanelCollapsed(false);
     }
   }, [selectedNode]);
+
+  useEffect(() => {
+    if (!selectedNode || selectedNode.id !== selectedHeatingCurve?.parentId) {
+      setSelectedHeatingCurve(null);
+    }
+  }, [selectedHeatingCurve, selectedNode]);
 
   const selectedProperties = useMemo(
     () => (selectedNode ? NODE_PROPERTIES[selectedNode.type] || [] : []),
@@ -921,6 +1035,19 @@ function FlowCanvas() {
           onUpdateProperty={updateNodeProperty}
           isCollapsed={isPanelCollapsed && !selectedNode}
           onToggleCollapse={() => setIsPanelCollapsed((prev) => !prev)}
+          selectedHeatingCurve={selectedHeatingCurve}
+          onSelectHeatingCurve={(parentId, curveId) => {
+            setIsPanelCollapsed(false);
+            setSelectedHeatingCurve({ parentId, curveId });
+            setNodes((prev) =>
+              prev.map((item) => ({
+                ...item,
+                selected: item.id === parentId,
+              }))
+            );
+          }}
+          onClearHeatingCurveSelection={() => setSelectedHeatingCurve(null)}
+          onUpdateHeatingCurveProperty={updateHeatingCurveProperty}
         />
       </main>
     </div>
