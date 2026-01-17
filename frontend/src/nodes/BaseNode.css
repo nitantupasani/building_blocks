@@ -256,141 +256,24 @@
   top: 100%; /* place immediately below the parent block */
   width: 189px; /* scaled tertiary width (135 * 1.4) */
   height: 105px; /* scaled collapsed height (75 * 1.4) */
-  background: #ffffff; /* tertiary yellow */
-  border: 2px solid #0f172a;
   border-top-left-radius: 0px; /* share a wall */
   border-top-right-radius: 0px;
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
   z-index: 2;
   padding: 6px;
   font-size: 11px;
   font-weight: 600;
-  overflow: visible; /* allow expand button to be visible outside block */
+  cursor: pointer;
 }
 
-.base-node__attached-label {
-  color: #0f172a;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
-}
-
-.heating-curve__content {
-  width: 100%;
-  height: 100%;
-  overflow: hidden; /* avoid scrollbars by default */
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  align-items: center;
-  justify-content: flex-start;
-}
-
-.heating-curve-block.expanded .heating-curve__content {
-  overflow: visible; /* allow wrapping and visible content when expanded */
-}
-
-.heating-curve__title {
-  font-size: 12px;
-  font-weight: 600;
-  color: #0f172a;
-  text-align: center;
-}
-
-.heating-curve__title {
-  white-space: normal; /* allow wrapping */
-  word-break: break-word;
-}
-
-.heating-curve__meta {
-  font-size: 10px;
-  color: #0f172a;
-}
-
-/* Emulated handles for attached heating-curve block to match tertiary node look */
-.heating-curve__handle {
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  background: #ffffff;
-  border: 3px solid #0f172a;
-  border-radius: 50%;
-  box-sizing: border-box;
-  z-index: 3;
-}
-
-.heating-curve__handle.top {
-  top: -12px; /* overlap into parent so handles align precisely */
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 6; /* sit above both blocks so handle overlaps parent */
-}
-
-.heating-curve__handle.bottom {
-  bottom: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.heating-curve__handle.left {
-  left: -12px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.heating-curve__handle.right {
-  right: -12px;
-  top: 50%;
-  transform: translateY(-50%);
+.heating-curve-block--selected {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.25);
 }
 
 .base-node__none {
   color: #94a3b8;
   font-size: 11px;
   padding: 6px;
-}
-
-/* Heating curve expand button inside the block */
-.heating-curve__expand-btn {
-  position: absolute;
-  bottom: -14px; /* match tertiary spacing so it aligns visually */
-  left: 50%;
-  transform: translateX(-50%);
-  width: 12%;
-  height: 12%;
-  min-width: 12px;
-  min-height: 12px;
-  max-width: 20px;
-  max-height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 3px;
-  background: #f8fafc;
-  color: #0f172a;
-  border: 1px solid #cbd5e1;
-  font-size: clamp(10px, 2vw, 14px);
-  line-height: 1;
-  cursor: pointer;
-  padding: 0;
-  transition: background 0.15s ease;
-  z-index: 12; /* keep it above parent expand btn */
-}
-
-.heating-curve-block.expanded {
-  height: auto; /* allow content to determine height so text can wrap without scrollbars */
-  min-height: 140px;
-}
-
-/* Ensure parent expand button sits above the heating curve */
-.base-node__expand-btn {
-  z-index: 12;
 }

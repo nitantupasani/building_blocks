@@ -1,7 +1,7 @@
 import { memo } from "react";
 import BaseNode from "./BaseNode.jsx";
 
-const PROPERTIES = [
+export const PROPERTIES = [
   { key: "flowRate", label: "Flow Rate (GPM)", type: "number", placeholder: "Flow rate" },
   { key: "supplyTemp", label: "Supply Temp (°F)", type: "number", placeholder: "Supply temp" },
   { key: "returnTemp", label: "Return Temp (°F)", type: "number", placeholder: "Return temp" },
@@ -9,7 +9,7 @@ const PROPERTIES = [
 ];
 
 function SecondaryCHWNode(props) {
-  return <BaseNode {...props} color="#06b6d4" properties={PROPERTIES} />;
+  return <BaseNode {...props} color="#06b6d4" />;
 }
 
 const MemoizedSecondaryCHWNode = memo(SecondaryCHWNode);
