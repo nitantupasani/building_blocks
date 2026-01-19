@@ -12,9 +12,11 @@
   overflow: visible; /* allow attached heating-curve block to be shown outside */
 }
 
-.react-flow__node.selected .base-node {
+.react-flow__node.selected > .base-node {
   border-color: #0078d7;
-  box-shadow: 0 0 0 3px rgba(0, 120, 215, 0.2);
+  border-width: 5px;
+  box-shadow: 0 0 0 4px rgba(0, 120, 215, 0.22);
+  z-index: 20;
 }
 
 .base-node__content {
@@ -271,6 +273,9 @@
   border-color: #7c3aed;
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.25);
 }
+
+/* The heating-curve block should not inherit the parent's selected outline.
+   Individual heating-curve selection can still use `.heating-curve-block--selected`. */
 
 .base-node__none {
   color: #94a3b8;
