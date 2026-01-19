@@ -210,6 +210,8 @@ function PropertiesPanel({
   // track open accordion keys independently so list item toggles don't collapse entire list
   const [openKeys, setOpenKeys] = useState(() => new Set());
   const [openListEditorKey, setOpenListEditorKey] = useState(null);
+  // store fetched register/get values per property path
+  const [registerValues, setRegisterValues] = useState({});
 
   const isHeatingCurveSelected =
     !!selectedHeatingCurve && selectedHeatingCurve.parentId === node?.id;
@@ -270,9 +272,6 @@ function PropertiesPanel({
     return entries.map(([k, v]) => {
       const path = `${prefix}.${k}`;
       const isOpenNested = openKeys.has(path);
-      // Allow editing of nested primitive values when their accordion path is open,
-      // or if the path matches the computed editablePropertyPath.
-      const isEditable = isOpenNested || editablePropertyPath === path;
 
       const toggleNested = (e) => {
         e?.stopPropagation();
@@ -284,32 +283,81 @@ function PropertiesPanel({
         });
       };
 
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const isUuid = typeof v === "string" && uuidRegex.test(v);
+
       return (
         <div key={path} className="app__side-panel-accordion-item">
-          <div className="app__side-panel-accordion-header">
-            <button
-              type="button"
-              className="app__side-panel-accordion-toggle"
-              onClick={toggleNested}
-              aria-expanded={isOpenNested}
-            >
+          <div className="app__side-panel-accordion-header" onClick={toggleNested}>
+            <div className="app__side-panel-accordion-toggle" role="button" aria-expanded={isOpenNested}>
               <span className="app__side-panel-accordion-title">
                 {Array.isArray(obj) ? getListItemLabel(v) : formatPropertyLabel(k)}
               </span>
-                                  <span className="app__side-panel-accordion-indicator">{isOpenNested ? "▾" : "▸"}</span>
+              <span className="app__side-panel-accordion-indicator">{isOpenNested ? "▾" : "▸"}</span>
+            </div>
             <button
               type="button"
               className="app__side-panel-delete"
-              onClick={() => (isHeating ? onDeleteHeatingCurveProperty(node.id, path) : onDeleteProperty(node.id, path))}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (isHeating) onDeleteHeatingCurveProperty(node.id, path);
+                else onDeleteProperty(node.id, path);
+              }}
             >
               Delete
             </button>
-            </button>
           </div>
+
           {isOpenNested && (
             <div className="app__side-panel-accordion-body">
               {v && typeof v === "object" ? (
                 renderNestedObject(v, path, isHeating)
+              ) : isUuid ? (
+                <div className="app__register-row">
+                  <label className="app__register-label">Register:</label>
+                  <div className="app__register-controls">
+                    <input
+                      className="app__register-input"
+                      type="text"
+                      value={v ?? ""}
+                      onChange={(e) => {
+                        const next = e.target.value;
+                        if (isHeating) onUpdateHeatingCurveProperty(node.id, path, next);
+                        else onUpdateProperty(node.id, path, next);
+                      }}
+                    />
+                    <div className="app__register-buttons">
+                      <div className="app__register-buttons-top">
+                        <button
+                          type="button"
+                          className="app__register-button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // placeholder: populate register value (replace with real fetch)
+                            const fetched = `Fetched value for ${v ?? path}`;
+                            setRegisterValues((prev) => ({ ...prev, [path]: fetched }));
+                          }}
+                        >
+                          Get
+                        </button>
+                        <button
+                          type="button"
+                          className="app__register-button"
+                          onClick={() => console.log('[Register] plot', path, v)}
+                        >
+                          Plot
+                        </button>
+                      </div>
+                      <input
+                        className="app__register-value"
+                        type="text"
+                        value={registerValues[path] ?? ""}
+                        onChange={(e) => setRegisterValues((prev) => ({ ...prev, [path]: e.target.value }))}
+                        placeholder="Get value"
+                      />
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <input
                   type={typeof v === "number" ? "number" : "text"}
@@ -319,7 +367,6 @@ function PropertiesPanel({
                     if (isHeating) onUpdateHeatingCurveProperty(node.id, path, next);
                     else onUpdateProperty(node.id, path, next);
                   }}
-                  
                 />
               )}
             </div>
@@ -328,7 +375,6 @@ function PropertiesPanel({
       );
     });
   };
-
   const childGroups = useMemo(() => {
     if (!node) return [];
     const childIds = edges
