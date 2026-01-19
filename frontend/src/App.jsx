@@ -564,11 +564,9 @@ function PropertiesPanel({
                       ) : prop.type === "list" ? (
                         <div className="app__side-panel-list-summary">
                           {Array.isArray(value) && value.length > 0 ? (
-                            <ul>
-                              {value.map((option, idx) => (
-                                <li key={idx}>{getListItemLabel(option)}</li>
-                              ))}
-                            </ul>
+                            <div className="app__side-panel-accordion">
+                              {renderNestedObject(value, prop.key, isHeatingCurveSelected)}
+                            </div>
                           ) : (
                             <div className="app__side-panel-empty">No items</div>
                           )}
