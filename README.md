@@ -1,11 +1,11 @@
 # Building Blocks Editor
 
-A visual editor for building HVAC system hierarchies with React Flow frontend and Python FastAPI backend.
+A visual editor for building HVAC system hierarchies with a React Flow frontend and a FastAPI backend.
 
 ## Project Structure
 
 ```
-mpl_canvas_editor/
+building_blocks/
 ├── frontend/          # React + Vite application
 │   ├── src/
 │   │   ├── api/      # Backend API integration
@@ -14,9 +14,9 @@ mpl_canvas_editor/
 │   │   └── App.jsx   # Main application
 │   └── package.json
 │
-└── backend/          # Python FastAPI service
-    ├── main.py       # API endpoints
-    ├── graph_data.json  # Data storage
+└── backend/           # Python FastAPI service
+    ├── main.py        # API endpoints + YAML import
+    ├── graph_data.json # Data storage
     └── requirements.txt
 ```
 
@@ -28,6 +28,7 @@ mpl_canvas_editor/
 - **Custom Properties**: Each node type has specific properties
 - **Expand/Collapse**: View detailed properties
 - **Backend Integration**: REST API for persistent storage
+- **YAML Import**: Convert building YAML into nodes and edges
 - **Real-time Sync**: Auto-save changes to backend
 
 ## Quick Start
@@ -100,6 +101,12 @@ requests.post('http://localhost:8000/api/edges', json={
 # Get entire graph
 graph = requests.get('http://localhost:8000/api/graph').json()
 print(graph)
+```
+
+### YAML Import
+
+```bash
+curl -F "file=@example_yaml_building.yaml" http://localhost:8000/api/import/yaml
 ```
 
 ## Hybrid Position Handling
