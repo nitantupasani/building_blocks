@@ -169,6 +169,26 @@ const resolveNodeIdFromOption = (option) => {
   return null;
 };
 
+const getListItemLabel = (option) => {
+  if (option === null || option === undefined) return "";
+  if (typeof option === "string" || typeof option === "number") return String(option);
+  if (typeof option === "object") {
+    return (
+      option.label ??
+      option.name ??
+      option.location ??
+      option.id ??
+      option.identifier ??
+      option.nodeId ??
+      option.temperature_register ??
+      option.setpoint_register ??
+      option.occupation_register ??
+      "[Unnamed]"
+    );
+  }
+  return String(option);
+};
+
 function PropertiesPanel({
   node,
   nodes,
@@ -188,6 +208,7 @@ function PropertiesPanel({
   const [draftValues, setDraftValues] = useState({});
   const [jsonErrors, setJsonErrors] = useState({});
   const [openPropertyKey, setOpenPropertyKey] = useState(null);
+  const [openListEditorKey, setOpenListEditorKey] = useState(null);
 
   const isHeatingCurveSelected =
     !!selectedHeatingCurve && selectedHeatingCurve.parentId === node?.id;
@@ -325,7 +346,7 @@ function PropertiesPanel({
     const nextDrafts = {};
     const nextErrors = {};
     activeProperties.forEach((prop) => {
-      if (prop.type === "object") {
+      if (prop.type === "object" || prop.type === "list") {
         const fallback = getJsonFallback(prop.type);
         nextDrafts[prop.key] = stringifyJsonValue(activeData?.[prop.key], fallback);
         nextErrors[prop.key] = "";
@@ -540,13 +561,33 @@ function PropertiesPanel({
                           {Array.isArray(value) && value.length > 0 ? (
                             <ul>
                               {value.map((option, idx) => (
-                                <li key={idx}>
-                                  {option?.label ?? option?.id ?? String(option)}
-                                </li>
+                                <li key={idx}>{getListItemLabel(option)}</li>
                               ))}
                             </ul>
                           ) : (
                             <div className="app__side-panel-empty">No items</div>
+                          )}
+                          <button
+                            type="button"
+                            className="app__side-panel-link"
+                            onClick={() =>
+                              setOpenListEditorKey((prev) => (prev === prop.key ? null : prop.key))
+                            }
+                          >
+                            {openListEditorKey === prop.key ? "Hide JSON editor" : "Edit list JSON"}
+                          </button>
+                          {openListEditorKey === prop.key && (
+                            <div className="app__side-panel-json-editor">
+                              <textarea
+                                id={fieldId}
+                                value={draftValues[prop.key] ?? ""}
+                                onChange={(event) => handleJsonChange(prop.key, event.target.value)}
+                                onBlur={() => handleJsonBlur(prop.key, prop.type)}
+                              />
+                              {jsonErrors[prop.key] && (
+                                <div className="app__side-panel-error">{jsonErrors[prop.key]}</div>
+                              )}
+                            </div>
                           )}
                         </div>
                       ) : prop.type === "object" ? (
