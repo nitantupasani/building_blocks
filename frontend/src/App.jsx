@@ -187,10 +187,10 @@ function PropertiesPanel({
 }) {
   const [draftValues, setDraftValues] = useState({});
   const [jsonErrors, setJsonErrors] = useState({});
+  const [openPropertyKey, setOpenPropertyKey] = useState(null);
 
   const isHeatingCurveSelected =
     !!selectedHeatingCurve && selectedHeatingCurve.parentId === node?.id;
-
   const activeData = isHeatingCurveSelected ? node?.data?.heating_curve : node?.data;
   const activeProperties = useMemo(
     () =>
@@ -199,6 +199,107 @@ function PropertiesPanel({
       }),
     [activeData, isHeatingCurveSelected]
   );
+
+  // editable property path will be computed below (deep search)
+
+  // Helpers to find deepest editable path inside an object
+  const findEditablePathInObject = (obj) => {
+    if (!obj || typeof obj !== "object") return null;
+    const entries = Object.entries(obj);
+    for (let i = entries.length - 1; i >= 0; i--) {
+      const [k, v] = entries[i];
+      if (v && typeof v === "object") {
+        // prefer a nested 'register' if present
+        if (Object.prototype.hasOwnProperty.call(v, "register")) return k;
+        const inner = findEditablePathInObject(v);
+        if (inner) return `${k}.${inner}`;
+      } else {
+        return k;
+      }
+    }
+    return null;
+  };
+
+  const findEditablePath = () => {
+    if (!activeProperties || activeProperties.length === 0) return null;
+    for (let i = activeProperties.length - 1; i >= 0; i--) {
+      const p = activeProperties[i];
+      const v = activeData?.[p.key];
+      if (v && typeof v === "object") {
+        if (Object.prototype.hasOwnProperty.call(v, "register")) return p.key;
+        const inner = findEditablePathInObject(v);
+        if (inner) return `${p.key}.${inner}`;
+        // else continue to next property
+      } else {
+        return p.key;
+      }
+    }
+    return null;
+  };
+
+  const editablePropertyPath = useMemo(() => findEditablePath(), [activeProperties, activeData]);
+
+  // Render nested object properties as accordion items (used for object props)
+  const renderNestedObject = (obj, prefix, isHeating) => {
+    if (!obj || typeof obj !== "object") {
+      return <div className="app__side-panel-empty">No properties</div>;
+    }
+    return Object.entries(obj).map(([k, v]) => {
+      const path = `${prefix}.${k}`;
+      const isOpenNested =
+        openPropertyKey === path ||
+        (openPropertyKey && (openPropertyKey.startsWith(path + ".") || path.startsWith(openPropertyKey + ".")));
+      // Allow editing of nested primitive values when their accordion path is open,
+      // or if the path matches the computed editablePropertyPath.
+      const isEditable = isOpenNested || editablePropertyPath === path;
+
+      const toggleNested = (e) => {
+        e?.stopPropagation();
+        setOpenPropertyKey((prev) => (prev === path ? null : path));
+      };
+
+      return (
+        <div key={path} className="app__side-panel-accordion-item">
+          <div className="app__side-panel-accordion-header">
+            <button
+              type="button"
+              className="app__side-panel-accordion-toggle"
+              onClick={toggleNested}
+              aria-expanded={isOpenNested}
+            >
+              <span className="app__side-panel-accordion-title">{formatPropertyLabel(k)}</span>
+                                  <span className="app__side-panel-accordion-indicator">{isOpenNested ? "▾" : "▸"}</span>
+            </button>
+            <button
+              type="button"
+              className="app__side-panel-delete"
+              onClick={() => (isHeating ? onDeleteHeatingCurveProperty(node.id, path) : onDeleteProperty(node.id, path))}
+            >
+              Delete
+            </button>
+          </div>
+          {isOpenNested && (
+            <div className="app__side-panel-accordion-body">
+              {v && typeof v === "object" ? (
+                renderNestedObject(v, path, isHeating)
+              ) : (
+                <input
+                  type={typeof v === "number" ? "number" : "text"}
+                  value={v ?? ""}
+                  onChange={(e) => {
+                    const next = typeof v === "number" ? Number(e.target.value) : e.target.value;
+                    if (isHeating) onUpdateHeatingCurveProperty(node.id, path, next);
+                    else onUpdateProperty(node.id, path, next);
+                  }}
+                  
+                />
+              )}
+            </div>
+          )}
+        </div>
+      );
+    });
+  };
 
   const childGroups = useMemo(() => {
     if (!node) return [];
@@ -374,111 +475,99 @@ function PropertiesPanel({
             No editable properties for this block.
           </div>
         ) : (
-          activeProperties.map((prop) => {
-            const fieldId = `field-${prop.key}`;
-            const value = activeData?.[prop.key];
-            const handleChange = (nextValue) =>
-              isHeatingCurveSelected
-                ? onUpdateHeatingCurveProperty(node.id, prop.key, nextValue)
-                : onUpdateProperty(node.id, prop.key, nextValue);
+          <div className="app__side-panel-accordion">
+            {activeProperties.map((prop) => {
+              const fieldId = `field-${prop.key}`;
+              const value = activeData?.[prop.key];
+              const handleChange = (nextValue) =>
+                isHeatingCurveSelected
+                  ? onUpdateHeatingCurveProperty(node.id, prop.key, nextValue)
+                  : onUpdateProperty(node.id, prop.key, nextValue);
 
-            return (
-              <div key={prop.key} className="app__side-panel-field">
-                <div className="app__side-panel-field-header">
-                  <label htmlFor={fieldId}>{prop.label}</label>
-                  <button
-                    type="button"
-                    className="app__side-panel-delete"
-                    onClick={() => handleDeleteProperty(prop.key)}
-                  >
-                    Delete
-                  </button>
+              const isOpen =
+                openPropertyKey === prop.key || (openPropertyKey && openPropertyKey.startsWith(prop.key + "."));
+              // Make primitive (non-object) top-level fields editable.
+              // For object-type properties, editing is controlled by the nested editable path.
+              const isEditable = prop.type !== "object" || prop.key === editablePropertyPath;
+
+              const toggle = (e) => {
+                e?.stopPropagation();
+                setOpenPropertyKey((prev) => (prev && prev.startsWith(prop.key) ? null : prop.key));
+              };
+
+              return (
+                <div key={prop.key} className="app__side-panel-accordion-item">
+                  <div className="app__side-panel-accordion-header">
+                    <button
+                      type="button"
+                      className="app__side-panel-accordion-toggle"
+                      onClick={toggle}
+                      aria-expanded={isOpen}
+                    >
+                      <span className="app__side-panel-accordion-title">{prop.label}</span>
+                      <span className="app__side-panel-accordion-indicator">{isOpen ? "▾" : "▸"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="app__side-panel-delete"
+                      onClick={() => handleDeleteProperty(prop.key)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                  {isOpen && (
+                    <div className="app__side-panel-accordion-body">
+                      {prop.type === "number" ? (
+                        <input
+                          id={fieldId}
+                          type="number"
+                          value={value ?? ""}
+                          onChange={(event) => handleChange(event.target.value)}
+                          placeholder="0"
+                        />
+                      ) : prop.type === "boolean" ? (
+                        <label className="app__side-panel-toggle">
+                          <input
+                            id={fieldId}
+                            type="checkbox"
+                            checked={Boolean(value)}
+                            onChange={(event) => handleChange(event.target.checked)}
+                          />
+                          <span>Enabled</span>
+                        </label>
+                      ) : prop.type === "list" ? (
+                        <div className="app__side-panel-list-summary">
+                          {Array.isArray(value) && value.length > 0 ? (
+                            <ul>
+                              {value.map((option, idx) => (
+                                <li key={idx}>
+                                  {option?.label ?? option?.id ?? String(option)}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <div className="app__side-panel-empty">No items</div>
+                          )}
+                        </div>
+                      ) : prop.type === "object" ? (
+                        <div>
+                          {renderNestedObject(value, prop.key, isHeatingCurveSelected)}
+                        </div>
+                      ) : (
+                        <input
+                          id={fieldId}
+                          type="text"
+                          value={value ?? ""}
+                          onChange={(event) => handleChange(event.target.value)}
+                          placeholder="Enter value"
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
-                {prop.type === "number" ? (
-                  <input
-                    id={fieldId}
-                    type="number"
-                    value={value ?? ""}
-                    onChange={(event) => handleChange(event.target.value)}
-                    placeholder="0"
-                  />
-                ) : prop.type === "boolean" ? (
-                  <label className="app__side-panel-toggle">
-                    <input
-                      id={fieldId}
-                      type="checkbox"
-                      checked={Boolean(value)}
-                      onChange={(event) => handleChange(event.target.checked)}
-                    />
-                    <span>Enabled</span>
-                  </label>
-                ) : prop.type === "list" ? (
-                  <select
-                    id={fieldId}
-                    value=""
-                    onChange={(event) => {
-                      const index = Number(event.target.value);
-                      if (!Number.isNaN(index)) {
-                        const nextValue = value?.[index];
-                        handleChange(nextValue);
-                        const nextNodeId = resolveNodeIdFromOption(nextValue);
-                        if (nextNodeId) {
-                          onSelectNode?.(nextNodeId);
-                        }
-                      }
-                    }}
-                    disabled={!Array.isArray(value) || value.length === 0}
-                  >
-                    <option value="" disabled>
-                      {Array.isArray(value) && value.length > 0
-                        ? "Select an item"
-                        : "No options"}
-                    </option>
-                    {Array.isArray(value)
-                      ? value.map((option, index) => {
-                          const optionLabel =
-                            option?.label ??
-                            option?.name ??
-                            option?.id ??
-                            (typeof option === "string" || typeof option === "number"
-                              ? option
-                              : `Item ${index + 1}`);
-                          return (
-                            <option key={`${prop.key}-${index}`} value={index}>
-                              {optionLabel}
-                            </option>
-                          );
-                        })
-                      : null}
-                  </select>
-                ) : prop.type === "object" ? (
-                  <>
-                    <textarea
-                      id={fieldId}
-                      value={draftValues[prop.key] ?? ""}
-                      onChange={(event) => handleJsonChange(prop.key, event.target.value)}
-                      onBlur={() => handleJsonBlur(prop.key, prop.type)}
-                      placeholder="Enter JSON"
-                      rows={5}
-                    />
-                    {jsonErrors[prop.key] ? (
-                      <span className="app__side-panel-error">{jsonErrors[prop.key]}</span>
-                    ) : (
-                      <span className="app__side-panel-hint">Edit as JSON.</span>
-                    )}
-                  </>
-                ) : (
-                  <input
-                    id={fieldId}
-                    type="text"
-                    value={value ?? ""}
-                    onChange={(event) => handleChange(event.target.value)}
-                    placeholder="Enter value"
-                  />
-                )}
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         )}
       </div>
     </aside>
@@ -673,18 +762,33 @@ function FlowCanvas() {
 
   const updateNodeProperty = useCallback(
     (id, property, value) => {
+      const setNested = (obj, pathArr, val) => {
+        if (pathArr.length === 0) return val;
+        const [head, ...rest] = pathArr;
+        return {
+          ...obj,
+          [head]: rest.length === 0 ? val : setNested(obj?.[head] ?? {}, rest, val),
+        };
+      };
+
       setNodes((prev) =>
-        prev.map((node) =>
-          node.id === id
-            ? {
-                ...node,
-                data: {
-                  ...node.data,
-                  [property]: value,
-                },
-              }
-            : node
-        )
+        prev.map((node) => {
+          if (node.id !== id) return node;
+          if (typeof property === "string" && property.includes(".")) {
+            const parts = property.split(".");
+            return {
+              ...node,
+              data: setNested(node.data ?? {}, parts, value),
+            };
+          }
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              [property]: value,
+            },
+          };
+        })
       );
     },
     [setNodes]
@@ -692,17 +796,36 @@ function FlowCanvas() {
 
   const deleteNodeProperty = useCallback(
     (id, property) => {
+      const deleteNested = (obj, parts) => {
+        if (!obj || parts.length === 0) return obj;
+        const [head, ...rest] = parts;
+        if (rest.length === 0) {
+          const { [head]: _, ...restObj } = obj;
+          return restObj;
+        }
+        if (!obj[head]) return obj;
+        const updatedChild = deleteNested(obj[head], rest);
+        return {
+          ...obj,
+          [head]: updatedChild,
+        };
+      };
+
       setNodes((prev) =>
-        prev.map((node) =>
-          node.id === id
-            ? {
-                ...node,
-                data: Object.fromEntries(
-                  Object.entries(node.data ?? {}).filter(([key]) => key !== property)
-                ),
-              }
-            : node
-        )
+        prev.map((node) => {
+          if (node.id !== id) return node;
+          if (typeof property === "string" && property.includes(".")) {
+            const parts = property.split(".");
+            return {
+              ...node,
+              data: deleteNested(node.data ?? {}, parts),
+            };
+          }
+          return {
+            ...node,
+            data: Object.fromEntries(Object.entries(node.data ?? {}).filter(([key]) => key !== property)),
+          };
+        })
       );
       if (property === "heating_curve") {
         setSelectedHeatingCurve(null);
@@ -713,21 +836,40 @@ function FlowCanvas() {
 
   const updateHeatingCurveProperty = useCallback(
     (id, property, value) => {
+      const setNested = (obj, pathArr, val) => {
+        if (pathArr.length === 0) return val;
+        const [head, ...rest] = pathArr;
+        return {
+          ...obj,
+          [head]: rest.length === 0 ? val : setNested(obj?.[head] ?? {}, rest, val),
+        };
+      };
+
       setNodes((prev) =>
-        prev.map((node) =>
-          node.id === id
-            ? {
-                ...node,
-                data: {
-                  ...node.data,
-                  heating_curve: {
-                    ...(node.data?.heating_curve ?? {}),
-                    [property]: value,
-                  },
-                },
-              }
-            : node
-        )
+        prev.map((node) => {
+          if (node.id !== id) return node;
+          if (typeof property === "string" && property.includes(".")) {
+            const parts = property.split(".");
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                heating_curve: setNested(node.data?.heating_curve ?? {}, parts, value),
+              },
+            };
+          }
+
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              heating_curve: {
+                ...(node.data?.heating_curve ?? {}),
+                [property]: value,
+              },
+            },
+          };
+        })
       );
     },
     [setNodes]
@@ -735,26 +877,50 @@ function FlowCanvas() {
 
   const deleteHeatingCurveProperty = useCallback(
     (id, property) => {
+      const deleteNested = (obj, parts) => {
+        if (!obj || parts.length === 0) return obj;
+        const [head, ...rest] = parts;
+        if (rest.length === 0) {
+          const {[head]: _, ...restObj} = obj;
+          return restObj;
+        }
+        if (!obj[head]) return obj;
+        const updatedChild = deleteNested(obj[head], rest);
+        return {
+          ...obj,
+          [head]: updatedChild,
+        };
+      };
+
       setNodes((prev) =>
-        prev.map((node) =>
-          node.id === id
-            ? {
-                ...node,
-                data: {
-                  ...node.data,
-                  heating_curve: Object.fromEntries(
-                    Object.entries(node.data?.heating_curve ?? {}).filter(
-                      ([key]) => key !== property
-                    )
-                  ),
-                },
-              }
-            : node
-        )
+        prev.map((node) => {
+          if (node.id !== id) return node;
+          if (typeof property === "string" && property.includes(".")) {
+            const parts = property.split(".");
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                heating_curve: deleteNested(node.data?.heating_curve ?? {}, parts),
+              },
+            };
+          }
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              heating_curve: Object.fromEntries(
+                Object.entries(node.data?.heating_curve ?? {}).filter(([key]) => key !== property)
+              ),
+            },
+          };
+        })
       );
     },
     [setNodes]
   );
+
+  
 
   const closeContextMenu = useCallback(() => {
     setContextMenu(null);
