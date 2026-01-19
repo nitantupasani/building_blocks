@@ -404,6 +404,7 @@ body {
   flex-direction: column;
   gap: 8px;
   padding: 8px 12px;
+  align-items: stretch;
 }
 
 
@@ -411,6 +412,35 @@ body {
   background: transparent;
   border-radius: 8px;
   margin-bottom: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* When an accordion contains another accordion (nested lists/objects),
+   don't add extra padding to the inner accordion — keep items full width */
+.app__side-panel-accordion .app__side-panel-accordion {
+  padding: 0;
+  gap: 6px;
+}
+
+.app__side-panel-accordion .app__side-panel-accordion-item {
+  margin: 6px 0;
+}
+
+/* Keep headers full width inside nested contexts */
+.app__side-panel-accordion .app__side-panel-accordion-header {
+  padding: 10px 12px;
+}
+
+/* Remove padding around nested accordion bodies so nested items are the same width */
+.app__side-panel-accordion .app__side-panel-accordion-body {
+  padding: 0;
+}
+
+/* Ensure nested items don't shrink due to parent padding — keep full width */
+.app__side-panel-accordion .app__side-panel-accordion .app__side-panel-accordion-item {
+  width: 100%;
+  margin-left: 0;
 }
 
 .app__side-panel-accordion-header {
@@ -445,6 +475,11 @@ body {
 
 .app__side-panel-accordion-title {
   color: #0f172a;
+  display: block;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  flex: 1 1 auto;
 }
 
 .app__side-panel-accordion-indicator {
@@ -462,6 +497,14 @@ body {
   padding: 10px 12px 12px;
   border-top: 1px solid #f1f5f9;
   background: #ffffff;
+}
+
+/* Ensure inputs and textareas inside accordion bodies are full width and consistent */
+.app__side-panel-accordion-body input,
+.app__side-panel-accordion-body textarea,
+.app__side-panel-accordion-body select {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .app__side-panel-list-summary ul {

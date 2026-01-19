@@ -207,7 +207,8 @@ function PropertiesPanel({
 }) {
   const [draftValues, setDraftValues] = useState({});
   const [jsonErrors, setJsonErrors] = useState({});
-  const [openPropertyKey, setOpenPropertyKey] = useState(null);
+  // track open accordion keys independently so list item toggles don't collapse entire list
+  const [openKeys, setOpenKeys] = useState(() => new Set());
   const [openListEditorKey, setOpenListEditorKey] = useState(null);
 
   const isHeatingCurveSelected =
@@ -265,21 +266,22 @@ function PropertiesPanel({
     if (!obj || typeof obj !== "object") {
       return <div className="app__side-panel-empty">No properties</div>;
     }
-    const entries = Array.isArray(obj)
-      ? obj.map((item, index) => [String(index), item])
-      : Object.entries(obj);
+    const entries = Array.isArray(obj) ? obj.map((item, index) => [String(index), item]) : Object.entries(obj);
     return entries.map(([k, v]) => {
       const path = `${prefix}.${k}`;
-      const isOpenNested =
-        openPropertyKey === path ||
-        (openPropertyKey && openPropertyKey.startsWith(path + "."));
+      const isOpenNested = openKeys.has(path);
       // Allow editing of nested primitive values when their accordion path is open,
       // or if the path matches the computed editablePropertyPath.
       const isEditable = isOpenNested || editablePropertyPath === path;
 
       const toggleNested = (e) => {
         e?.stopPropagation();
-        setOpenPropertyKey((prev) => (prev === path ? null : path));
+        setOpenKeys((prev) => {
+          const next = new Set(prev);
+          if (next.has(path)) next.delete(path);
+          else next.add(path);
+          return next;
+        });
       };
 
       return (
@@ -295,13 +297,13 @@ function PropertiesPanel({
                 {Array.isArray(obj) ? getListItemLabel(v) : formatPropertyLabel(k)}
               </span>
                                   <span className="app__side-panel-accordion-indicator">{isOpenNested ? "▾" : "▸"}</span>
-            </button>
             <button
               type="button"
               className="app__side-panel-delete"
               onClick={() => (isHeating ? onDeleteHeatingCurveProperty(node.id, path) : onDeleteProperty(node.id, path))}
             >
               Delete
+            </button>
             </button>
           </div>
           {isOpenNested && (
@@ -511,14 +513,25 @@ function PropertiesPanel({
                   : onUpdateProperty(node.id, prop.key, nextValue);
 
               const isOpen =
-                openPropertyKey === prop.key || (openPropertyKey && openPropertyKey.startsWith(prop.key + "."));
+                openKeys.has(prop.key) || Array.from(openKeys).some((k) => k.startsWith(prop.key + "."));
               // Make primitive (non-object) top-level fields editable.
               // For object-type properties, editing is controlled by the nested editable path.
               const isEditable = prop.type !== "object" || prop.key === editablePropertyPath;
 
               const toggle = (e) => {
                 e?.stopPropagation();
-                setOpenPropertyKey((prev) => (prev && prev.startsWith(prop.key) ? null : prop.key));
+                setOpenKeys((prev) => {
+                  const next = new Set(prev);
+                  const hasAny = Array.from(next).some((k) => k === prop.key || k.startsWith(prop.key + "."));
+                  if (hasAny) {
+                    for (const k of Array.from(next)) {
+                      if (k === prop.key || k.startsWith(prop.key + ".")) next.delete(k);
+                    }
+                  } else {
+                    next.add(prop.key);
+                  }
+                  return next;
+                });
               };
 
               return (
