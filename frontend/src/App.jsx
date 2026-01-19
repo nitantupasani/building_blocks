@@ -174,11 +174,11 @@ const getListItemLabel = (option) => {
   if (typeof option === "string" || typeof option === "number") return String(option);
   if (typeof option === "object") {
     return (
-      option.label ??
       option.name ??
-      option.location ??
-      option.id ??
       option.identifier ??
+      option.location ??
+      option.label ??
+      option.id ??
       option.nodeId ??
       option.temperature_register ??
       option.setpoint_register ??
@@ -265,11 +265,14 @@ function PropertiesPanel({
     if (!obj || typeof obj !== "object") {
       return <div className="app__side-panel-empty">No properties</div>;
     }
-    return Object.entries(obj).map(([k, v]) => {
+    const entries = Array.isArray(obj)
+      ? obj.map((item, index) => [String(index), item])
+      : Object.entries(obj);
+    return entries.map(([k, v]) => {
       const path = `${prefix}.${k}`;
       const isOpenNested =
         openPropertyKey === path ||
-        (openPropertyKey && (openPropertyKey.startsWith(path + ".") || path.startsWith(openPropertyKey + ".")));
+        (openPropertyKey && openPropertyKey.startsWith(path + "."));
       // Allow editing of nested primitive values when their accordion path is open,
       // or if the path matches the computed editablePropertyPath.
       const isEditable = isOpenNested || editablePropertyPath === path;
@@ -288,7 +291,9 @@ function PropertiesPanel({
               onClick={toggleNested}
               aria-expanded={isOpenNested}
             >
-              <span className="app__side-panel-accordion-title">{formatPropertyLabel(k)}</span>
+              <span className="app__side-panel-accordion-title">
+                {Array.isArray(obj) ? getListItemLabel(v) : formatPropertyLabel(k)}
+              </span>
                                   <span className="app__side-panel-accordion-indicator">{isOpenNested ? "▾" : "▸"}</span>
             </button>
             <button
@@ -559,11 +564,9 @@ function PropertiesPanel({
                       ) : prop.type === "list" ? (
                         <div className="app__side-panel-list-summary">
                           {Array.isArray(value) && value.length > 0 ? (
-                            <ul>
-                              {value.map((option, idx) => (
-                                <li key={idx}>{getListItemLabel(option)}</li>
-                              ))}
-                            </ul>
+                            <div className="app__side-panel-accordion">
+                              {renderNestedObject(value, prop.key, isHeatingCurveSelected)}
+                            </div>
                           ) : (
                             <div className="app__side-panel-empty">No items</div>
                           )}
