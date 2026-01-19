@@ -595,3 +595,15 @@ body {
   font-size: 13px;
   color: #64748b;
 }
+
+.app__side-panel-json-editor {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.app__side-panel-json-editor textarea {
+  min-height: 120px;
+  resize: vertical;
+}
