@@ -502,6 +502,8 @@ function FlowCanvas() {
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);
   const [selectedHeatingCurve, setSelectedHeatingCurve] = useState(null);
 
+  
+
   const nodeTypesMemo = useMemo(() => nodeTypes, []);
 
   // Load graph from backend on mount
@@ -754,6 +756,10 @@ function FlowCanvas() {
     [setNodes]
   );
 
+  const closeContextMenu = useCallback(() => {
+    setContextMenu(null);
+  }, []);
+
   const selectNodeById = useCallback(
     (nodeId) => {
       setNodes((prev) =>
@@ -768,10 +774,6 @@ function FlowCanvas() {
     },
     [closeContextMenu, setNodes]
   );
-
-  const closeContextMenu = useCallback(() => {
-    setContextMenu(null);
-  }, []);
 
   const changeBlockType = useCallback(
     (nodeId, blockType) => {
