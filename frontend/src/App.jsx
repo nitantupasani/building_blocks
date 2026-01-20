@@ -212,6 +212,17 @@ function PropertiesPanel({
   const [openListEditorKey, setOpenListEditorKey] = useState(null);
   // store fetched register/get values per property path
   const [registerValues, setRegisterValues] = useState({});
+  const asideRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      // remove any global listeners if component unmounts while resizing
+      window.onmousemove = null;
+      window.onmouseup = null;
+      window.onpointermove = null;
+      window.onpointerup = null;
+    };
+  }, []);
 
   const isHeatingCurveSelected =
     !!selectedHeatingCurve && selectedHeatingCurve.parentId === node?.id;
@@ -316,9 +327,9 @@ function PropertiesPanel({
                 <div className="app__register-row">
                   <label className="app__register-label">Register:</label>
                   <div className="app__register-controls">
-                    <input
+                    <textarea
                       className="app__register-input"
-                      type="text"
+                      rows={2}
                       value={v ?? ""}
                       onChange={(e) => {
                         const next = e.target.value;
@@ -342,7 +353,7 @@ function PropertiesPanel({
                         </button>
                         <button
                           type="button"
-                          className="app__register-button"
+                          className="app__register-button app__register-button--plot"
                           onClick={() => console.log('[Register] plot', path, v)}
                         >
                           Plot
@@ -475,7 +486,7 @@ function PropertiesPanel({
   };
 
   return (
-    <aside className="app__side-panel">
+    <aside ref={asideRef} className="app__side-panel">
       <div className="app__side-panel-header">
         <div>
           <div className="app__side-panel-title">
@@ -673,6 +684,31 @@ function PropertiesPanel({
           </div>
         )}
       </div>
+      <div
+        className="app__side-panel-resizer"
+        role="separator"
+        aria-orientation="vertical"
+        onMouseDown={(e) => {
+          e.preventDefault();
+          if (!asideRef.current) return;
+          const startX = e.clientX;
+          const startWidth = asideRef.current.getBoundingClientRect().width;
+
+          const onMove = (ev) => {
+            const dx = startX - ev.clientX;
+            const newWidth = Math.max(220, Math.min(600, startWidth + dx));
+            asideRef.current.style.width = `${newWidth}px`;
+          };
+
+          const onUp = () => {
+            window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('mouseup', onUp);
+          };
+
+          window.addEventListener('mousemove', onMove);
+          window.addEventListener('mouseup', onUp);
+        }}
+      />
     </aside>
   );
 }
@@ -1298,16 +1334,7 @@ function FlowCanvas() {
 
   return (
     <div className="app">
-      <header className="app__header">
-        <div className="app__header-content">
-          <h1>Building Blocks Editor</h1>
-          <p>
-            Use the Add block button or double-click the canvas to add a block.
-            Double-click a block to edit its label. Use the side handles to connect nodes.
-            {loading && " Loading..."}
-          </p>
-        </div>
-      </header>
+      {/* header removed — keep only canvas */}
 
       <main className="app__canvas" ref={wrapperRef}>
         <div className="app__yaml-controls">

@@ -15,9 +15,9 @@ export function calculateTreeLayout(nodes, edges) {
 
   const roots = nodes.filter(n => !parents[n.id] || parents[n.id].length === 0).map(n => n.id);
 
-  // If no roots found, fallback to a simple row layout
+  // If no roots found, fallback to a simple row layout (tighter spacing)
   if (roots.length === 0) {
-    return nodes.map((node, index) => ({ ...node, position: { x: index * 250, y: 50 } }));
+    return nodes.map((node, index) => ({ ...node, position: { x: index * 120, y: 50 } }));
   }
 
   const SCALE = 1.4;
@@ -36,7 +36,9 @@ export function calculateTreeLayout(nodes, edges) {
     return { width: Math.round(s.width * SCALE), height: Math.round(s.height * SCALE) };
   };
 
-  const HORIZONTAL_SPACING = Math.round(80 * SCALE);
+  // Minimal spacing: bring primary blocks closer together
+  const HORIZONTAL_SPACING = Math.round(2 * SCALE);
+  const SMALL_HORIZONTAL_SPACING = Math.round(1 * SCALE);
   const VERTICAL_SPACING = Math.round(120 * SCALE);
 
   const calculateSubtreeWidth = (nodeId, memo = {}) => {
@@ -47,7 +49,19 @@ export function calculateTreeLayout(nodes, edges) {
     const nodeChildren = children[nodeId] || [];
     if (nodeChildren.length === 0) return memo[nodeId] = nodeWidth;
     const childrenWidth = nodeChildren.reduce((sum, cid) => sum + calculateSubtreeWidth(cid, memo), 0);
-    const totalChildrenWidth = childrenWidth + (nodeChildren.length - 1) * HORIZONTAL_SPACING;
+    // Compute gap widths between consecutive children, using smaller gap when both are primary blocks
+    const gapWidth = (ids) => {
+      if (ids.length <= 1) return 0;
+      let sum = 0;
+      for (let i = 0; i < ids.length - 1; i++) {
+        const a = nodes.find(n => n.id === ids[i]) || {};
+        const b = nodes.find(n => n.id === ids[i+1]) || {};
+        const bothPrimary = /primary-(hw|chw)/i.test(String(a.type || '')) && /primary-(hw|chw)/i.test(String(b.type || ''));
+        sum += bothPrimary ? SMALL_HORIZONTAL_SPACING : HORIZONTAL_SPACING;
+      }
+      return sum;
+    };
+    const totalChildrenWidth = childrenWidth + gapWidth(nodeChildren);
     memo[nodeId] = Math.max(nodeWidth, totalChildrenWidth);
     return memo[nodeId];
   };
@@ -78,7 +92,14 @@ export function calculateTreeLayout(nodes, edges) {
     const nodeChildren = children[nodeId] || [];
     if (nodeChildren.length === 0) return;
     const childWidths = nodeChildren.map(cid => calculateSubtreeWidth(cid));
-    const totalWidth = childWidths.reduce((s, w) => s + w, 0) + (nodeChildren.length - 1) * HORIZONTAL_SPACING;
+    const gaps = [];
+    for (let i = 0; i < nodeChildren.length - 1; i++) {
+      const a = nodes.find(n => n.id === nodeChildren[i]) || {};
+      const b = nodes.find(n => n.id === nodeChildren[i+1]) || {};
+      const bothPrimary = /primary-(hw|chw)/i.test(String(a.type || '')) && /primary-(hw|chw)/i.test(String(b.type || ''));
+      gaps.push(bothPrimary ? SMALL_HORIZONTAL_SPACING : HORIZONTAL_SPACING);
+    }
+    const totalWidth = childWidths.reduce((s, w) => s + w, 0) + gaps.reduce((s, g) => s + g, 0);
     let childX = x - totalWidth / 2;
     nodeChildren.forEach((childId, idx) => {
       const childWidth = childWidths[idx];
@@ -87,15 +108,18 @@ export function calculateTreeLayout(nodes, edges) {
       const isTertiary = /tertiary/i.test(String(childNode.type || ''));
       const extraVertical = isTertiary ? Math.round(VERTICAL_SPACING * 2.0) : 0;
       positionSubtree(childId, childCenterX, y + levelHeight + VERTICAL_SPACING + extraVertical, level + (isTertiary ? 2 : 1));
-      childX += childWidth + HORIZONTAL_SPACING;
+      // advance by child width plus the gap after it (if any)
+      const gapAfter = idx < gaps.length ? gaps[idx] : 0;
+      childX += childWidth + gapAfter;
     });
   };
 
-  let currentX = 300;
+    let currentX = 80;
   roots.forEach(rootId => {
     const rootWidth = calculateSubtreeWidth(rootId);
     positionSubtree(rootId, currentX, 50, 0);
-    currentX += rootWidth + HORIZONTAL_SPACING * 3;
+    // use a smaller gap between root groups to tighten layout
+      currentX += rootWidth;
   });
 
   // Post-process: ensure tertiary nodes sit below secondary siblings

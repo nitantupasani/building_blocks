@@ -318,35 +318,16 @@ def process_yaml_to_graph(yaml_data: Dict) -> Dict:
             if not curve:
                 continue
 
-            curve_name = curve.get("name", "Heating Curve")
+            # Attach the full heating curve object to the loop so the frontend
+            # can display all YAML-defined properties (X1, X2, Y1, Y2, etc.).
+            # Keep a stable `id` and `label` for convenience in the UI.
+            full_curve = dict(curve) if isinstance(curve, dict) else {"identifier": curve}
+            # Ensure common UI keys exist
+            full_curve["id"] = curve_id
+            if "name" in full_curve and "label" not in full_curve:
+                full_curve["label"] = full_curve.get("name")
 
-            # Extract sensors data
-            sensors_list = curve.get("sensors", [])
-            sensors_data = []
-            for sensor in sensors_list:
-                if isinstance(sensor, str):
-                    sensors_data.append({
-                        "location": sensor,
-                        "occupation": "-",
-                        "setpoint": "-",
-                        "temperature": "-"
-                    })
-                elif isinstance(sensor, dict):
-                    sensor_location = sensor.get("location", sensor.get("temperature_register", "Unknown"))
-                    sensors_data.append({
-                        "location": sensor_location,
-                        "occupation": "✓" if sensor.get("occupation_register") or sensor.get("occupancy_schedule_override") else "✗",
-                        "setpoint": "✓" if sensor.get("setpoint_register") else "✗",
-                        "temperature": "✓" if sensor.get("temperature_register") else "✗"
-                    })
-
-            return {
-                "id": curve_id,
-                "label": curve_name,
-                "sensors_count": len(sensors_list),
-                "equipment": ", ".join(curve.get("equipment", [])) if curve.get("equipment") else "N/A",
-                "sensors": sensors_data
-            }
+            return full_curve
 
         return None
     

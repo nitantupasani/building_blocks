@@ -19,15 +19,15 @@ function BaseNode({
 
   // Font sizes based on block type
   const fontSizes = {
-    building: "14px",
-    "primary-hw": "12px",
-    "primary-chw": "12px",
-    "secondary-hw": "11px",
-    "secondary-chw": "11px",
-    "tertiary-hw": "10px",
-    "tertiary-chw": "10px",
-    "heating-curve": "10px",
-    sensor: "8px",
+    building: "22px",
+    "primary-hw": "20px",
+    "primary-chw": "20px",
+    "secondary-hw": "20px",
+    "secondary-chw": "20px",
+    "tertiary-hw": "18px",
+    "tertiary-chw": "18px",
+    "heating-curve": "18px",
+    sensor: "12px",
   };
 
   const fontSize = fontSizes[blockType] || "14px";

@@ -59,9 +59,9 @@ body {
 
 .app__yaml-controls {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 5;
+  top: 6px; /* slightly above the add buttons */
+  left: 16px; /* move to top-left */
+  z-index: 12; /* sit above the add buttons */
   display: flex;
   gap: 8px;
   align-items: center;
@@ -144,7 +144,7 @@ body {
 
 .app__add-buttons {
   position: absolute;
-  top: 16px;
+  top: 72px; /* moved down to avoid overlapping with YAML controls */
   left: 16px;
   z-index: 5;
   display: flex;
@@ -296,10 +296,10 @@ body {
 
 .app__side-panel {
   position: absolute;
-  top: 96px;
+  top: 0; /* extend to top of canvas */
   right: 16px;
-  bottom: 16px;
-  width: 320px;
+  bottom: 0; /* extend to bottom of canvas */
+  width: clamp(280px, 28vw, 420px);
   background: #ffffff;
   border-radius: 12px;
   border: 1px solid #e2e8f0;
@@ -310,6 +310,28 @@ body {
   overflow: hidden;
 }
 
+/* Resizer on the left edge of the side panel to allow dragging to resize */
+.app__side-panel-resizer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+  cursor: ew-resize;
+  z-index: 30;
+}
+.app__side-panel-resizer:after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 48px;
+  border-radius: 6px;
+  background: rgba(15,23,42,0.06);
+}
+
 .app__side-panel--collapsed {
   width: 44px;
   height: 140px;
@@ -317,6 +339,19 @@ body {
   padding: 0;
   justify-content: center;
   align-items: center;
+}
+
+/* Ensure collapsed state overrides any inline width set by the resizer */
+.app__side-panel--collapsed {
+  width: 44px !important;
+  min-width: 44px !important;
+  max-width: 44px !important;
+  overflow: visible;
+}
+
+/* Hide the resizer when collapsed so the handle doesn't show */
+.app__side-panel--collapsed .app__side-panel-resizer {
+  display: none !important;
 }
 
 .app__side-panel-tab {
@@ -524,12 +559,20 @@ body {
   align-items: flex-start;
 }
 .app__register-input {
-  flex: 0 0 50%; /* reduce width to half */
+  /* responsive textarea for register values */
+  flex: 1 1 65%;
+  min-width: 160px;
+  max-width: 100%;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
-  padding: 8px 10px;
-  font-size: 13px;
-  word-break: break-all;
+  padding: 12px 14px;
+  font-size: 15px;
+  word-break: break-word;
+  white-space: normal;
+  min-height: 81px; /* tall enough for wrapped UUID without scrolling */
+  line-height: 1.25;
+  resize: vertical;
+  overflow: auto;
 }
 .app__register-buttons {
   display: flex;
@@ -545,11 +588,16 @@ body {
 .app__register-button {
   border: 1px solid #e2e8f0;
   background: #ffffff;
-  padding: 6px 8px;
-  border-radius: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 13px;
+  min-width: 96px; /* slightly smaller */
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .app__register-button:hover {
   background: #f8fafc;
@@ -557,12 +605,31 @@ body {
 /* textbox that appears under the Get/Plot buttons to show fetched value */
 .app__register-value {
   margin-top: 6px;
-  width: 160px;
+  width: 72px; /* base width; overridden by more specific selector below */
+  height: 32px;
   border: 1px solid #e6eef8;
   border-radius: 6px;
   padding: 6px 8px;
   font-size: 13px;
 }
+
+/* More specific selector to override the general .app__side-panel-accordion-body input rule */
+.app__side-panel-accordion-body .app__register-value {
+  width: min(96px, 75%);
+  box-sizing: border-box;
+  display: inline-block;
+}
+/* (consolidated .app__register-input rules above) */
+
+/* Smaller variant for the Plot button */
+.app__register-button--plot {
+  min-width: 64px;
+  padding: 6px 10px;
+  font-size: 12px;
+  height: 32px;
+}
+
+/* (consolidated .app__register-input rules above) */
 
 .app__side-panel-list-summary ul {
   margin: 0;
@@ -619,6 +686,33 @@ body {
   gap: 6px;
   font-size: 13px;
   color: #0f172a;
+}
+
+/* Child fields rendered inside parent bounding box */
+.app__side-panel-field--child {
+  font-size: 12px;
+  color: #1f2937;
+  background: transparent;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.app__side-panel-field--child .app__side-panel-field-header {
+  gap: 6px;
+}
+
+.app__register-row--child .app__register-label {
+  font-size: 12px;
+}
+.app__register-input--child {
+  padding: 8px 10px;
+  font-size: 13px;
+  min-height: 56px;
+}
+.app__register-button--child {
+  min-width: 72px;
+  height: 30px;
+  font-size: 12px;
 }
 
 .app__side-panel-field-header {
