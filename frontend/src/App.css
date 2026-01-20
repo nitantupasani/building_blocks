@@ -141,6 +141,11 @@ body {
   padding: 8px 12px;
 }
 
+/* hidden state used to remove collapsed panels while another panel is expanded */
+.app__ahu-panel--hidden {
+  display: none;
+}
+
 /* Make collapsed AHU toggle light green to match AHU blocks */
 .app__ahu-panel--collapsed .app__ahu-panel-toggle {
   background: #bbf7d0;

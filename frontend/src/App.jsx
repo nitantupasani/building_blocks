@@ -691,6 +691,12 @@ function FlowCanvas() {
   const [hwCollapsed, setHwCollapsed] = useState(true);
   const [chwCollapsed, setChwCollapsed] = useState(true);
 
+  // hide collapsed panels only when an expanded panel above them would overlap
+  // Order (top -> bottom): AHU, HW, CHW
+  const ahuPanelHidden = false; // AHU is top-most; never hide when others expand below
+  const hwPanelHidden = hwCollapsed && !ahuCollapsed; // hide HW only when AHU expanded (above it)
+  const chwPanelHidden = chwCollapsed && (!ahuCollapsed || !hwCollapsed); // hide CHW when AHU or HW expanded (above it)
+
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [loading, setLoading] = useState(true);
@@ -1350,7 +1356,7 @@ function FlowCanvas() {
     const handleResize = () => computePositions();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [addCollapsed, wrapperRef, addButtonsRef, nodes, ahuRef, hwRef, chwRef]);
+  }, [addCollapsed, wrapperRef, addButtonsRef, nodes, ahuRef, hwRef, chwRef, ahuCollapsed, hwCollapsed, chwCollapsed]);
 
   useEffect(() => {
     if (!selectedNode || selectedNode.id !== selectedHeatingCurve?.parentId) {
@@ -1402,7 +1408,16 @@ function FlowCanvas() {
             <button
               type="button"
               className="app__ahu-panel-toggle"
-              onClick={() => setAhuCollapsed((s) => !s)}
+              onClick={() =>
+                setAhuCollapsed((s) => {
+                  const next = !s;
+                  if (!next) {
+                    setHwCollapsed(true);
+                    setChwCollapsed(true);
+                  }
+                  return next;
+                })
+              }
             >
               {ahuCollapsed ? 'AHUs' : '▾'}
             </button>
@@ -1448,6 +1463,151 @@ function FlowCanvas() {
             </div>
           )}
         </div>
+        {/* Hot Water Loops panel */}
+        <div
+          ref={hwRef}
+          className={`app__ahu-panel app__hw-panel ${hwCollapsed ? 'app__ahu-panel--collapsed' : ''} ${hwPanelHidden ? 'app__ahu-panel--hidden' : ''}`}
+          style={{ top: `${hwTopPx}px` }}
+        >
+          <div className="app__ahu-panel-header">
+            <div className="app__ahu-panel-title">Hot Water Loops</div>
+            <button
+              type="button"
+              className="app__ahu-panel-toggle"
+              onClick={() =>
+                setHwCollapsed((s) => {
+                  const next = !s;
+                  if (!next) {
+                    setAhuCollapsed(true);
+                    setChwCollapsed(true);
+                  }
+                  return next;
+                })
+              }
+            >
+              {hwCollapsed ? 'HW' : '▾'}
+            </button>
+          </div>
+          {!hwCollapsed && (
+            <div className="app__ahu-list">
+              {(() => {
+                const buildingNode = nodes.find(
+                  (n) => n.type === 'building' || n.data?.blockType === 'building'
+                );
+                const hw =
+                  buildingNode?.data?.building?.hot_water_loops?.hot_water_loop ||
+                  buildingNode?.data?.building?.hot_water_loops ||
+                  buildingNode?.data?.hot_water_loops ||
+                  [];
+                if (!hw || hw.length === 0) {
+                  return <div className="app__ahu-empty">No Hot Water loops defined</div>;
+                }
+
+                return hw.map((loop, idx) => {
+                  const loopId = loop?.identifier ?? loop?.id ?? null;
+                  const loopNode = nodes.find(
+                    (n) =>
+                      n.type?.includes('hw') &&
+                      (n.id === loopId || n.data?.identifier === loopId || n.data?.label === loop?.label || n.data?.label === loop?.name)
+                  );
+                  const isSelected = loopNode && selectedNode?.id === loopNode.id;
+
+                  return (
+                    <div
+                      key={loopId || idx}
+                      className={`app__ahu-item ${isSelected ? 'app__ahu-item--selected' : ''}`}
+                    >
+                      <button
+                        type="button"
+                        className="app__ahu-link"
+                        onClick={() => {
+                          if (loopNode) selectNodeById(loopNode.id);
+                        }}
+                      >
+                        {loop?.name || loop?.label || loopId || `HW ${idx + 1}`}
+                      </button>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          )}
+        </div>
+
+        {/* Cold Water Loops panel */}
+        <div
+          ref={chwRef}
+          className={`app__ahu-panel app__chw-panel ${chwCollapsed ? 'app__ahu-panel--collapsed' : ''} ${chwPanelHidden ? 'app__ahu-panel--hidden' : ''}`}
+          style={{ top: `${chwTopPx}px` }}
+        >
+          <div className="app__ahu-panel-header">
+            <div className="app__ahu-panel-title">Cold Water Loops</div>
+            <button
+              type="button"
+              className="app__ahu-panel-toggle"
+              onClick={() =>
+                setChwCollapsed((s) => {
+                  const next = !s;
+                  if (!next) {
+                    setAhuCollapsed(true);
+                    setHwCollapsed(true);
+                  }
+                  return next;
+                })
+              }
+            >
+              {chwCollapsed ? 'CHW' : '▾'}
+            </button>
+          </div>
+          {!chwCollapsed && (
+            <div className="app__ahu-list">
+              {(() => {
+                const buildingNode = nodes.find(
+                  (n) => n.type === 'building' || n.data?.blockType === 'building'
+                );
+                const chw =
+                  buildingNode?.data?.building?.chilled_water_loops?.chilled_water_loop ||
+                  buildingNode?.data?.building?.cold_water_loops?.cold_water_loop ||
+                  buildingNode?.data?.building?.cold_water_loops ||
+                  buildingNode?.data?.chilled_water_loops ||
+                  buildingNode?.data?.cold_water_loops ||
+                  [];
+
+                if (!chw || chw.length === 0) {
+                  return <div className="app__ahu-empty">No Cold Water loops defined</div>;
+                }
+
+                return chw.map((loop, idx) => {
+                  const loopId = loop?.identifier ?? loop?.id ?? null;
+                  const loopNode = nodes.find(
+                    (n) =>
+                      n.type?.includes('chw') &&
+                      (n.id === loopId || n.data?.identifier === loopId || n.data?.label === loop?.label || n.data?.label === loop?.name)
+                  );
+                  const isSelected = loopNode && selectedNode?.id === loopNode.id;
+
+                  return (
+                    <div
+                      key={loopId || idx}
+                      className={`app__ahu-item ${isSelected ? 'app__ahu-item--selected' : ''}`}
+                    >
+                      <button
+                        type="button"
+                        className="app__ahu-link"
+                        onClick={() => {
+                          if (loopNode) selectNodeById(loopNode.id);
+                        }}
+                      >
+                        {loop?.name || loop?.label || loopId || `CHW ${idx + 1}`}
+                      </button>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          )}
+        </div>
+
         <div ref={addButtonsRef} className={`app__add-buttons ${addCollapsed ? 'app__add-buttons--collapsed' : ''}`}>
           {addCollapsed ? (
             <button
