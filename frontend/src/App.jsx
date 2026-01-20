@@ -235,156 +235,189 @@ function PropertiesPanel({
     [activeData, isHeatingCurveSelected]
   );
 
-  // editable property path will be computed below (deep search)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-  // Helpers to find deepest editable path inside an object
-  const findEditablePathInObject = (obj) => {
-    if (!obj || typeof obj !== "object") return null;
-    const entries = Object.entries(obj);
-    for (let i = entries.length - 1; i >= 0; i--) {
-      const [k, v] = entries[i];
-      if (v && typeof v === "object") {
-        // prefer a nested 'register' if present
-        if (Object.prototype.hasOwnProperty.call(v, "register")) return k;
-        const inner = findEditablePathInObject(v);
-        if (inner) return `${k}.${inner}`;
-      } else {
-        return k;
-      }
-    }
-    return null;
+  const toggleOpenKey = (key) => {
+    setOpenKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   };
 
-  const findEditablePath = () => {
-    if (!activeProperties || activeProperties.length === 0) return null;
-    for (let i = activeProperties.length - 1; i >= 0; i--) {
-      const p = activeProperties[i];
-      const v = activeData?.[p.key];
-      if (v && typeof v === "object") {
-        if (Object.prototype.hasOwnProperty.call(v, "register")) return p.key;
-        const inner = findEditablePathInObject(v);
-        if (inner) return `${p.key}.${inner}`;
-        // else continue to next property
-      } else {
-        return p.key;
-      }
-    }
-    return null;
-  };
-
-  const editablePropertyPath = useMemo(() => findEditablePath(), [activeProperties, activeData]);
-
-  // Render nested object properties as accordion items (used for object props)
-  const renderNestedObject = (obj, prefix, isHeating) => {
-    if (!obj || typeof obj !== "object") {
-      return <div className="app__side-panel-empty">No properties</div>;
-    }
-    const entries = Array.isArray(obj) ? obj.map((item, index) => [String(index), item]) : Object.entries(obj);
-    return entries.map(([k, v]) => {
-      const path = `${prefix}.${k}`;
-      const isOpenNested = openKeys.has(path);
-
-      const toggleNested = (e) => {
-        e?.stopPropagation();
-        setOpenKeys((prev) => {
-          const next = new Set(prev);
-          if (next.has(path)) next.delete(path);
-          else next.add(path);
-          return next;
-        });
-      };
-
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      const isUuid = typeof v === "string" && uuidRegex.test(v);
-
+  const renderLeafEditor = (value, path, isHeating) => {
+    const isUuid = typeof value === "string" && uuidRegex.test(value);
+    if (isUuid) {
       return (
-        <div key={path} className="app__side-panel-accordion-item">
-          <div className="app__side-panel-accordion-header" onClick={toggleNested}>
-            <div className="app__side-panel-accordion-toggle" role="button" aria-expanded={isOpenNested}>
-              <span className="app__side-panel-accordion-title">
-                {Array.isArray(obj) ? getListItemLabel(v) : formatPropertyLabel(k)}
-              </span>
-              <span className="app__side-panel-accordion-indicator">{isOpenNested ? "▾" : "▸"}</span>
-            </div>
-            <button
-              type="button"
-              className="app__side-panel-delete"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (isHeating) onDeleteHeatingCurveProperty(node.id, path);
-                else onDeleteProperty(node.id, path);
+        <div className="app__register-row">
+          <label className="app__register-label">Register:</label>
+          <div className="app__register-controls">
+            <textarea
+              className="app__register-input"
+              rows={2}
+              value={value ?? ""}
+              onChange={(e) => {
+                const next = e.target.value;
+                if (isHeating) onUpdateHeatingCurveProperty(node.id, path, next);
+                else onUpdateProperty(node.id, path, next);
               }}
-            >
-              Delete
-            </button>
-          </div>
-
-          {isOpenNested && (
-            <div className="app__side-panel-accordion-body">
-              {v && typeof v === "object" ? (
-                renderNestedObject(v, path, isHeating)
-              ) : isUuid ? (
-                <div className="app__register-row">
-                  <label className="app__register-label">Register:</label>
-                  <div className="app__register-controls">
-                    <textarea
-                      className="app__register-input"
-                      rows={2}
-                      value={v ?? ""}
-                      onChange={(e) => {
-                        const next = e.target.value;
-                        if (isHeating) onUpdateHeatingCurveProperty(node.id, path, next);
-                        else onUpdateProperty(node.id, path, next);
-                      }}
-                    />
-                    <div className="app__register-buttons">
-                      <div className="app__register-buttons-top">
-                        <button
-                          type="button"
-                          className="app__register-button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // placeholder: populate register value (replace with real fetch)
-                            const fetched = `Fetched value for ${v ?? path}`;
-                            setRegisterValues((prev) => ({ ...prev, [path]: fetched }));
-                          }}
-                        >
-                          Get
-                        </button>
-                        <button
-                          type="button"
-                          className="app__register-button app__register-button--plot"
-                          onClick={() => console.log('[Register] plot', path, v)}
-                        >
-                          Plot
-                        </button>
-                      </div>
-                      <input
-                        className="app__register-value"
-                        type="text"
-                        value={registerValues[path] ?? ""}
-                        onChange={(e) => setRegisterValues((prev) => ({ ...prev, [path]: e.target.value }))}
-                        placeholder="Get value"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <input
-                  type={typeof v === "number" ? "number" : "text"}
-                  value={v ?? ""}
-                  onChange={(e) => {
-                    const next = typeof v === "number" ? Number(e.target.value) : e.target.value;
-                    if (isHeating) onUpdateHeatingCurveProperty(node.id, path, next);
-                    else onUpdateProperty(node.id, path, next);
+            />
+            <div className="app__register-buttons">
+              <div className="app__register-buttons-top">
+                <button
+                  type="button"
+                  className="app__register-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const fetched = `Fetched value for ${value ?? path}`;
+                    setRegisterValues((prev) => ({ ...prev, [path]: fetched }));
                   }}
-                />
-              )}
+                >
+                  Get
+                </button>
+                <button
+                  type="button"
+                  className="app__register-button app__register-button--plot"
+                  onClick={() => console.log('[Register] plot', path, value)}
+                >
+                  Plot
+                </button>
+              </div>
+              <input
+                className="app__register-value"
+                type="text"
+                value={registerValues[path] ?? ""}
+                onChange={(e) => setRegisterValues((prev) => ({ ...prev, [path]: e.target.value }))}
+                placeholder="Get value"
+              />
             </div>
-          )}
+          </div>
         </div>
       );
-    });
+    }
+
+    return (
+      <input
+        type={typeof value === "number" ? "number" : "text"}
+        value={value ?? ""}
+        onChange={(e) => {
+          const next = typeof value === "number" ? Number(e.target.value) : e.target.value;
+          if (isHeating) onUpdateHeatingCurveProperty(node.id, path, next);
+          else onUpdateProperty(node.id, path, next);
+        }}
+      />
+    );
+  };
+
+  const renderPropertyTree = ({
+    label,
+    path,
+    value,
+    type,
+    depth = 0,
+    isHeating = false,
+    isListItem = false,
+  }) => {
+    const isOpen = openKeys.has(path);
+    const hasChildren =
+      (type === "object" || type === "list") &&
+      value &&
+      (Array.isArray(value) ? value.length > 0 : Object.keys(value).length > 0);
+
+    const showToggle = type === "object" || type === "list" || hasChildren;
+    const rowLabel = isListItem ? getListItemLabel(value) : label;
+
+    return (
+      <div key={path} className="app__side-panel-tree-item">
+        <div className={`app__side-panel-tree-row${depth > 0 ? " app__side-panel-tree-row--child" : ""}`}>
+          <button
+            type="button"
+            className="app__side-panel-tree-toggle"
+            onClick={() => toggleOpenKey(path)}
+            aria-expanded={isOpen}
+          >
+            <span
+              className={`app__side-panel-tree-indicator${showToggle ? "" : " app__side-panel-tree-indicator--empty"}`}
+            >
+              {showToggle ? (isOpen ? "▾" : "▸") : "•"}
+            </span>
+            <span className="app__side-panel-tree-title">{rowLabel}</span>
+          </button>
+          <button
+            type="button"
+            className="app__side-panel-delete"
+            onClick={() => {
+              if (isHeating) onDeleteHeatingCurveProperty(node.id, path);
+              else onDeleteProperty(node.id, path);
+            }}
+          >
+            Delete
+          </button>
+        </div>
+        {isOpen && (
+          <div className="app__side-panel-tree-children">
+            {type === "list" ? (
+              <>
+                {Array.isArray(value) && value.length > 0 ? (
+                  value.map((childValue, index) =>
+                    renderPropertyTree({
+                      label: String(index),
+                      path: `${path}.${index}`,
+                      value: childValue,
+                      type: getPropertyType(childValue),
+                      depth: depth + 1,
+                      isHeating,
+                      isListItem: true,
+                    })
+                  )
+                ) : (
+                  <div className="app__side-panel-empty">No items</div>
+                )}
+                <button
+                  type="button"
+                  className="app__side-panel-link"
+                  onClick={() =>
+                    setOpenListEditorKey((prev) => (prev === path ? null : path))
+                  }
+                >
+                  {openListEditorKey === path ? "Hide JSON editor" : "Edit list JSON"}
+                </button>
+                {openListEditorKey === path && (
+                  <div className="app__side-panel-json-editor">
+                    <textarea
+                      value={draftValues[path] ?? ""}
+                      onChange={(event) => handleJsonChange(path, event.target.value)}
+                      onBlur={() => handleJsonBlur(path, type)}
+                    />
+                    {jsonErrors[path] && (
+                      <div className="app__side-panel-error">{jsonErrors[path]}</div>
+                    )}
+                  </div>
+                )}
+              </>
+            ) : type === "object" ? (
+              value && Object.keys(value).length > 0 ? (
+                Object.entries(value).map(([childKey, childValue]) =>
+                  renderPropertyTree({
+                    label: formatPropertyLabel(childKey),
+                    path: `${path}.${childKey}`,
+                    value: childValue,
+                    type: getPropertyType(childValue),
+                    depth: depth + 1,
+                    isHeating,
+                  })
+                )
+              ) : (
+                <div className="app__side-panel-empty">No properties</div>
+              )
+            ) : (
+              renderLeafEditor(value, path, isHeating)
+            )}
+          </div>
+        )}
+      </div>
+    );
   };
   const childGroups = useMemo(() => {
     if (!node) return [];
@@ -473,18 +506,6 @@ function PropertiesPanel({
     }
   };
 
-  const handleDeleteProperty = (key) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${formatPropertyLabel(key)}"?`
-    );
-    if (!confirmed) return;
-    if (isHeatingCurveSelected) {
-      onDeleteHeatingCurveProperty(node.id, key);
-    } else {
-      onDeleteProperty(node.id, key);
-    }
-  };
-
   return (
     <aside ref={asideRef} className="app__side-panel">
       <div className="app__side-panel-header">
@@ -560,127 +581,16 @@ function PropertiesPanel({
             No editable properties for this block.
           </div>
         ) : (
-          <div className="app__side-panel-accordion">
-            {activeProperties.map((prop) => {
-              const fieldId = `field-${prop.key}`;
-              const value = activeData?.[prop.key];
-              const handleChange = (nextValue) =>
-                isHeatingCurveSelected
-                  ? onUpdateHeatingCurveProperty(node.id, prop.key, nextValue)
-                  : onUpdateProperty(node.id, prop.key, nextValue);
-
-              const isOpen =
-                openKeys.has(prop.key) || Array.from(openKeys).some((k) => k.startsWith(prop.key + "."));
-              // Make primitive (non-object) top-level fields editable.
-              // For object-type properties, editing is controlled by the nested editable path.
-              const isEditable = prop.type !== "object" || prop.key === editablePropertyPath;
-
-              const toggle = (e) => {
-                e?.stopPropagation();
-                setOpenKeys((prev) => {
-                  const next = new Set(prev);
-                  const hasAny = Array.from(next).some((k) => k === prop.key || k.startsWith(prop.key + "."));
-                  if (hasAny) {
-                    for (const k of Array.from(next)) {
-                      if (k === prop.key || k.startsWith(prop.key + ".")) next.delete(k);
-                    }
-                  } else {
-                    next.add(prop.key);
-                  }
-                  return next;
-                });
-              };
-
-              return (
-                <div key={prop.key} className="app__side-panel-accordion-item">
-                  <div className="app__side-panel-accordion-header">
-                    <button
-                      type="button"
-                      className="app__side-panel-accordion-toggle"
-                      onClick={toggle}
-                      aria-expanded={isOpen}
-                    >
-                      <span className="app__side-panel-accordion-title">{prop.label}</span>
-                      <span className="app__side-panel-accordion-indicator">{isOpen ? "▾" : "▸"}</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="app__side-panel-delete"
-                      onClick={() => handleDeleteProperty(prop.key)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                  {isOpen && (
-                    <div className="app__side-panel-accordion-body">
-                      {prop.type === "number" ? (
-                        <input
-                          id={fieldId}
-                          type="number"
-                          value={value ?? ""}
-                          onChange={(event) => handleChange(event.target.value)}
-                          placeholder="0"
-                        />
-                      ) : prop.type === "boolean" ? (
-                        <label className="app__side-panel-toggle">
-                          <input
-                            id={fieldId}
-                            type="checkbox"
-                            checked={Boolean(value)}
-                            onChange={(event) => handleChange(event.target.checked)}
-                          />
-                          <span>Enabled</span>
-                        </label>
-                      ) : prop.type === "list" ? (
-                        <div className="app__side-panel-list-summary">
-                          {Array.isArray(value) && value.length > 0 ? (
-                            <div className="app__side-panel-accordion">
-                              {renderNestedObject(value, prop.key, isHeatingCurveSelected)}
-                            </div>
-                          ) : (
-                            <div className="app__side-panel-empty">No items</div>
-                          )}
-                          <button
-                            type="button"
-                            className="app__side-panel-link"
-                            onClick={() =>
-                              setOpenListEditorKey((prev) => (prev === prop.key ? null : prop.key))
-                            }
-                          >
-                            {openListEditorKey === prop.key ? "Hide JSON editor" : "Edit list JSON"}
-                          </button>
-                          {openListEditorKey === prop.key && (
-                            <div className="app__side-panel-json-editor">
-                              <textarea
-                                id={fieldId}
-                                value={draftValues[prop.key] ?? ""}
-                                onChange={(event) => handleJsonChange(prop.key, event.target.value)}
-                                onBlur={() => handleJsonBlur(prop.key, prop.type)}
-                              />
-                              {jsonErrors[prop.key] && (
-                                <div className="app__side-panel-error">{jsonErrors[prop.key]}</div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ) : prop.type === "object" ? (
-                        <div>
-                          {renderNestedObject(value, prop.key, isHeatingCurveSelected)}
-                        </div>
-                      ) : (
-                        <input
-                          id={fieldId}
-                          type="text"
-                          value={value ?? ""}
-                          onChange={(event) => handleChange(event.target.value)}
-                          placeholder="Enter value"
-                        />
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+          <div className="app__side-panel-tree">
+            {activeProperties.map((prop) =>
+              renderPropertyTree({
+                label: prop.label,
+                path: prop.key,
+                value: activeData?.[prop.key],
+                type: prop.type,
+                isHeating: isHeatingCurveSelected,
+              })
+            )}
           </div>
         )}
       </div>
