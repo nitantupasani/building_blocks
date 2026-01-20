@@ -45,6 +45,11 @@ function BaseNode({
       style={{ backgroundColor: color }}
       onClick={onClick}
     >
+      {(data?.blockType === 'ahu' || String(className).includes('base-node--ahu')) && (
+        <div className="base-node__icon" title="AHU">
+          <img src="/ahu-icon.png" alt="AHU" />
+        </div>
+      )}
       {showResizer && (
         <NodeResizer
           minWidth={100}
@@ -82,7 +87,7 @@ function BaseNode({
       </div>
 
       {/* Attached heating-curve visual block (shares wall with loop) */}
-      {data?.heating_curve && String(blockType).includes("hw") && (
+      {data?.heating_curve && (String(blockType).includes("hw") || String(blockType) === 'ahu') && (
         <HeatingCurveBlock
           parentId={id}
           heatingCurve={data.heating_curve}

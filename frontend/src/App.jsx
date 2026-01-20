@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -19,6 +19,7 @@ import SecondaryCHWNode from "./nodes/SecondaryCHWNode.jsx";
 import TertiaryHWNode from "./nodes/TertiaryHWNode.jsx";
 import TertiaryCHWNode from "./nodes/TertiaryCHWNode.jsx";
 import SensorNode from "./nodes/SensorNode.jsx";
+import AHUNode from "./nodes/AHUNode.jsx";
 import { api, transformToReactFlow, transformToBackend } from "./api/graphApi.js";
 import { calculateTreeLayout } from "./utils/layoutAlgorithm.js";
 import "./App.css";
@@ -32,6 +33,7 @@ const nodeTypes = {
   "tertiary-hw": TertiaryHWNode,
   "tertiary-chw": TertiaryCHWNode,
   sensor: SensorNode,
+  ahu: AHUNode,
 };
 
 const BLOCK_LABELS = {
@@ -43,6 +45,7 @@ const BLOCK_LABELS = {
   "tertiary-hw": "Tertiary HW Loop",
   "tertiary-chw": "Tertiary CHW Loop",
   sensor: "Sensor",
+  ahu: "AHU",
 };
 
 const RESERVED_PROPERTY_KEYS = new Set([
@@ -246,6 +249,26 @@ function PropertiesPanel({
     });
   };
 
+  // Determine parent node (one level up in the graph) for the currently displayed object.
+  // Guard against `node` being undefined and support targets that may use
+  // `id`, `data.identifier`, or `name` as the target value.
+  const parentEdge = node
+    ? edges.find((e) =>
+        e.target === node.id ||
+        e.target === node.data?.identifier ||
+        e.target === node.name
+      )
+    : null;
+
+  const parentNode = parentEdge
+    ? nodes.find(
+        (n) =>
+          n.id === parentEdge.source ||
+          n.data?.identifier === parentEdge.source ||
+          n.name === parentEdge.source
+      )
+    : null;
+
   const renderLeafEditor = (value, path, isHeating) => {
     const isUuid = typeof value === "string" && uuidRegex.test(value);
     if (isUuid) {
@@ -295,6 +318,7 @@ function PropertiesPanel({
           </div>
         </div>
       );
+
     }
 
     return (
@@ -526,6 +550,18 @@ function PropertiesPanel({
             Back to loop properties
           </button>
         )}
+        {parentNode && (
+          <button
+            type="button"
+            className="app__side-panel-link"
+            onClick={() => {
+              onSelectNode?.(parentNode.id);
+              onClearHeatingCurveSelection?.();
+            }}
+          >
+            Back to {parentNode.data?.label ?? BLOCK_LABELS[parentNode.type] ?? parentNode.id}
+          </button>
+        )}
       </div>
       <div className="app__side-panel-body">
         {!isHeatingCurveSelected && (
@@ -541,37 +577,52 @@ function PropertiesPanel({
           </div>
         )}
         {!isHeatingCurveSelected && node.data?.heating_curve && (
-          <button
-            type="button"
-            className="app__side-panel-cta"
-            onClick={() => onSelectHeatingCurve(node.id, node.data?.heating_curve?.id)}
-          >
-            Select Heating Curve
-          </button>
+          <div className="app__side-panel-field">
+            <label>Heating Curve</label>
+            <div className="app__side-panel-list-item">
+              <button
+                type="button"
+                className="app__side-panel-link"
+                onClick={() => onSelectHeatingCurve(node.id, node.data?.heating_curve?.id)}
+              >
+                {node.data?.heating_curve?.label ?? node.data?.heating_curve?.id}
+              </button>
+            </div>
+          </div>
         )}
         {!isHeatingCurveSelected && childGroups.length > 0 && (
           <div className="app__side-panel-section">
             <div className="app__side-panel-section-title">Hierarchy</div>
             {childGroups.map((group) => (
               <div key={group.label} className="app__side-panel-field">
-                <label htmlFor={`child-${group.label}`}>{group.label} Children</label>
-                <select
-                  id={`child-${group.label}`}
-                  value=""
-                  onChange={(event) => {
-                    const selectedId = event.target.value;
-                    if (selectedId) onSelectNode?.(selectedId);
-                  }}
-                >
-                  <option value="" disabled>
-                    Select a {group.label}
-                  </option>
+                <label>{group.label} Children</label>
+                <div className="app__side-panel-list">
                   {group.items.map((child) => (
-                    <option key={child.id} value={child.id}>
-                      {child.data?.label ?? child.id}
-                    </option>
+                    <div key={child.id} className="app__side-panel-list-item">
+                      <button
+                        type="button"
+                        className="app__side-panel-link"
+                        onClick={() => onSelectNode?.(child.id)}
+                      >
+                        {child.data?.label ?? child.id}
+                      </button>
+                      <button
+                        type="button"
+                        className="app__side-panel-delete"
+                        onClick={() => {
+                          // allow quick delete of the child node if desired
+                          if (window.confirm(`Delete ${child.data?.label ?? child.id}?`)) {
+                            // call API or local delete - here we trigger a selection then deletion via event
+                            // deletion handled elsewhere; just select it so user can delete from context menu
+                            onSelectNode?.(child.id);
+                          }
+                        }}
+                      >
+                        ⋮
+                      </button>
+                    </div>
                   ))}
-                </select>
+                </div>
               </div>
             ))}
           </div>
@@ -628,6 +679,17 @@ function FlowCanvas() {
   const idRef = useRef(2);
   const wrapperRef = useRef(null);
   const saveTimeoutRef = useRef(null);
+  const [ahuCollapsed, setAhuCollapsed] = useState(true);
+  const [addCollapsed, setAddCollapsed] = useState(true);
+  const addButtonsRef = useRef(null);
+  const [ahuTopPx, setAhuTopPx] = useState(140);
+  const ahuRef = useRef(null);
+  const hwRef = useRef(null);
+  const chwRef = useRef(null);
+  const [hwTopPx, setHwTopPx] = useState(200);
+  const [chwTopPx, setChwTopPx] = useState(260);
+  const [hwCollapsed, setHwCollapsed] = useState(true);
+  const [chwCollapsed, setChwCollapsed] = useState(true);
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -1236,6 +1298,60 @@ function FlowCanvas() {
     }
   }, [selectedNode]);
 
+  useLayoutEffect(() => {
+    const padding = 12; // small gap between add buttons and panels
+    const defaultAhuTop = 140;
+    const defaultHwTop = defaultAhuTop + 64;
+    const defaultChwTop = defaultHwTop + 64;
+
+    const computePositions = () => {
+      if (addCollapsed) {
+        setAhuTopPx(defaultAhuTop);
+        setHwTopPx(defaultHwTop);
+        setChwTopPx(defaultChwTop);
+        return;
+      }
+
+      if (addButtonsRef.current && wrapperRef.current) {
+        const addRect = addButtonsRef.current.getBoundingClientRect();
+        const wrapperRect = wrapperRef.current.getBoundingClientRect();
+        const baseTop = Math.max(8, Math.round(addRect.bottom - wrapperRect.top + padding));
+
+        // compute AHU top and clamp so header stays visible inside wrapper
+        const maxTop = Math.max(40, Math.floor(wrapperRect.height - 48));
+        const ahuTop = Math.min(baseTop, maxTop);
+        setAhuTopPx(ahuTop);
+
+        // AHU height (use collapsed header height if collapsed)
+        const ahuH = ahuRef.current ? ahuRef.current.offsetHeight : 56;
+
+        // HW below AHU, clamp to keep visible
+        const hwTopRaw = ahuTop + ahuH + padding;
+        const hwTop = Math.min(hwTopRaw, maxTop);
+        setHwTopPx(hwTop);
+
+        // HW height
+        const hwH = hwRef.current ? hwRef.current.offsetHeight : 56;
+
+        // CHW below HW, clamp as well
+        const chwTopRaw = hwTop + hwH + padding;
+        const chwTop = Math.min(chwTopRaw, maxTop);
+        setChwTopPx(chwTop);
+      } else {
+        setAhuTopPx(defaultAhuTop);
+        setHwTopPx(defaultHwTop);
+        setChwTopPx(defaultChwTop);
+      }
+    };
+
+    // always compute positions (will use defaults when collapsed)
+    computePositions();
+
+    const handleResize = () => computePositions();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [addCollapsed, wrapperRef, addButtonsRef, nodes, ahuRef, hwRef, chwRef]);
+
   useEffect(() => {
     if (!selectedNode || selectedNode.id !== selectedHeatingCurve?.parentId) {
       setSelectedHeatingCurve(null);
@@ -1275,56 +1391,135 @@ function FlowCanvas() {
             Draw Graph
           </button>
         </div>
-        <div className="app__add-buttons">
-          <button
-            className="app__add-button app__add-button--primary-hw"
-            type="button"
-            onClick={() => addBlockAtCenter("primary-hw")}
-          >
-            + Primary HW
-          </button>
-          <button
-            className="app__add-button app__add-button--primary-chw"
-            type="button"
-            onClick={() => addBlockAtCenter("primary-chw")}
-          >
-            + Primary CHW
-          </button>
-          <button
-            className="app__add-button app__add-button--secondary-hw"
-            type="button"
-            onClick={() => addBlockAtCenter("secondary-hw")}
-          >
-            + Secondary HW
-          </button>
-          <button
-            className="app__add-button app__add-button--secondary-chw"
-            type="button"
-            onClick={() => addBlockAtCenter("secondary-chw")}
-          >
-            + Secondary CHW
-          </button>
-          <button
-            className="app__add-button app__add-button--tertiary-hw"
-            type="button"
-            onClick={() => addBlockAtCenter("tertiary-hw")}
-          >
-            + Tertiary HW
-          </button>
-          <button
-            className="app__add-button app__add-button--tertiary-chw"
-            type="button"
-            onClick={() => addBlockAtCenter("tertiary-chw")}
-          >
-            + Tertiary CHW
-          </button>
-          <button
-            className="app__add-button app__add-button--sensor"
-            type="button"
-            onClick={() => addBlockAtCenter("sensor")}
-          >
-            + Sensor
-          </button>
+        {/* AHU list panel on the left */}
+        <div
+          ref={ahuRef}
+          className={`app__ahu-panel ${ahuCollapsed ? 'app__ahu-panel--collapsed' : ''}`}
+          style={{ top: `${ahuTopPx}px` }}
+        >
+          <div className="app__ahu-panel-header">
+            <div className="app__ahu-panel-title">AHUs</div>
+            <button
+              type="button"
+              className="app__ahu-panel-toggle"
+              onClick={() => setAhuCollapsed((s) => !s)}
+            >
+              {ahuCollapsed ? 'AHUs' : '▾'}
+            </button>
+          </div>
+          {!ahuCollapsed && (
+            <div className="app__ahu-list">
+              {(() => {
+                const buildingNode = nodes.find(
+                  (n) => n.type === 'building' || n.data?.blockType === 'building'
+                );
+                const ahus = buildingNode?.data?.building?.ahus || buildingNode?.data?.ahus || [];
+                if (!ahus || ahus.length === 0) {
+                  return <div className="app__ahu-empty">No AHUs defined</div>;
+                }
+
+                return ahus.map((ahu, idx) => {
+                  const ahuId = ahu?.identifier ?? ahu?.id ?? null;
+                  const ahuNode = nodes.find(
+                    (n) =>
+                      n.type === 'ahu' &&
+                      (n.id === ahuId || n.data?.identifier === ahuId || n.data?.identifier === ahu?.id)
+                  );
+                  const isSelected = ahuNode && selectedNode?.id === ahuNode.id;
+
+                  return (
+                    <div
+                      key={ahuId || idx}
+                      className={`app__ahu-item ${isSelected ? 'app__ahu-item--selected' : ''}`}
+                    >
+                      <button
+                        type="button"
+                        className="app__ahu-link"
+                        onClick={() => {
+                          if (ahuNode) selectNodeById(ahuNode.id);
+                        }}
+                      >
+                        {ahu?.name || ahu?.label || ahuId || `AHU ${idx + 1}`}
+                      </button>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          )}
+        </div>
+        <div ref={addButtonsRef} className={`app__add-buttons ${addCollapsed ? 'app__add-buttons--collapsed' : ''}`}>
+          {addCollapsed ? (
+            <button
+              className="app__add-buttons-collapse-toggle"
+              onClick={() => setAddCollapsed(false)}
+              title="Show add block buttons"
+            >
+              Add a block
+            </button>
+          ) : (
+            <>
+              <div className="app__add-buttons-header">
+                <button className="app__add-buttons-close" onClick={() => setAddCollapsed(true)}>✕</button>
+              </div>
+              <button
+                className="app__add-button app__add-button--primary-hw"
+                type="button"
+                onClick={() => addBlockAtCenter("primary-hw")}
+              >
+                + Primary HW
+              </button>
+              <button
+                className="app__add-button app__add-button--primary-chw"
+                type="button"
+                onClick={() => addBlockAtCenter("primary-chw")}
+              >
+                + Primary CHW
+              </button>
+              <button
+                className="app__add-button app__add-button--secondary-hw"
+                type="button"
+                onClick={() => addBlockAtCenter("secondary-hw")}
+              >
+                + Secondary HW
+              </button>
+              <button
+                className="app__add-button app__add-button--secondary-chw"
+                type="button"
+                onClick={() => addBlockAtCenter("secondary-chw")}
+              >
+                + Secondary CHW
+              </button>
+              <button
+                className="app__add-button app__add-button--tertiary-hw"
+                type="button"
+                onClick={() => addBlockAtCenter("tertiary-hw")}
+              >
+                + Tertiary HW
+              </button>
+              <button
+                className="app__add-button app__add-button--tertiary-chw"
+                type="button"
+                onClick={() => addBlockAtCenter("tertiary-chw")}
+              >
+                + Tertiary CHW
+              </button>
+              <button
+                className="app__add-button app__add-button--ahu"
+                type="button"
+                onClick={() => addBlockAtCenter("ahu")}
+              >
+                + AHU
+              </button>
+              <button
+                className="app__add-button app__add-button--sensor"
+                type="button"
+                onClick={() => addBlockAtCenter("sensor")}
+              >
+                + Sensor
+              </button>
+            </>
+          )}
         </div>
         <ReactFlow
           nodes={nodesWithHandlers}

@@ -281,15 +281,19 @@ def process_yaml_to_graph(yaml_data: Dict) -> Dict:
     building_name = building.get("name", "Building")
     building_id = "building-1"
     
-    # Create building node
+    # Create building node and attach all building properties from YAML
+    building_props = dict(building) if isinstance(building, dict) else {}
+    # Ensure label exists
+    building_props.setdefault("label", building_name)
+    # Also attach the full building YAML object under a dedicated key so the
+    # frontend can reliably read the entire building structure (ahus, loops, curves)
+    building_props["building"] = dict(building) if isinstance(building, dict) else building
+
     nodes.append({
         "id": building_id,
         "type": "building",
         "position": None,
-        "properties": {
-            "label": building_name,
-            "description": f"Building with {len(building.get('hot_water_loops', []))} hot water loops"
-        }
+        "properties": building_props
     })
     
     # Process hot water loops
@@ -299,6 +303,7 @@ def process_yaml_to_graph(yaml_data: Dict) -> Dict:
     # Build lookup tables
     loop_by_id = {}
     curve_by_id = {}
+    ahu_by_id = {}
     
     for loop in hot_water_loops:
         if loop and loop.get("identifier"):
@@ -307,44 +312,20 @@ def process_yaml_to_graph(yaml_data: Dict) -> Dict:
     for curve in heating_curves:
         if curve and curve.get("identifier"):
             curve_by_id[curve["identifier"]] = curve
+
+    # Collect AHUs defined at building level (if any)
+    for ahu in building.get("ahus", []):
+        if ahu and ahu.get("identifier"):
+            ahu_by_id[ahu["identifier"]] = ahu
     
     def process_loop_heating_curves(loop_id, loop_data):
-        """Process heating curves for a given loop"""
-        # Return the first associated heating curve as an embedded object, or None
+        """Return the first associated heating curve as the full YAML object (preserving fields like X1/X2)."""
         for curve_id in loop_data.get("heating_curves", []):
             curve = curve_by_id.get(curve_id)
             if not curve:
                 continue
-
-            curve_name = curve.get("name", "Heating Curve")
-
-            # Extract sensors data
-            sensors_list = curve.get("sensors", [])
-            sensors_data = []
-            for sensor in sensors_list:
-                if isinstance(sensor, str):
-                    sensors_data.append({
-                        "location": sensor,
-                        "occupation": "-",
-                        "setpoint": "-",
-                        "temperature": "-"
-                    })
-                elif isinstance(sensor, dict):
-                    sensor_location = sensor.get("location", sensor.get("temperature_register", "Unknown"))
-                    sensors_data.append({
-                        "location": sensor_location,
-                        "occupation": "✓" if sensor.get("occupation_register") or sensor.get("occupancy_schedule_override") else "✗",
-                        "setpoint": "✓" if sensor.get("setpoint_register") else "✗",
-                        "temperature": "✓" if sensor.get("temperature_register") else "✗"
-                    })
-
-            return {
-                "id": curve_id,
-                "label": curve_name,
-                "sensors_count": len(sensors_list),
-                "equipment": ", ".join(curve.get("equipment", [])) if curve.get("equipment") else "N/A",
-                "sensors": sensors_data
-            }
+            # Return a shallow copy of the full curve dict so frontend can display all fields
+            return dict(curve)
 
         return None
     
@@ -355,18 +336,17 @@ def process_yaml_to_graph(yaml_data: Dict) -> Dict:
         # Determine embedded heating curve (if any)
         heating_curve_obj = process_loop_heating_curves(loop_id, loop_data)
 
+        # Attach the full loop YAML object as properties so all loop fields are visible in the UI
+        loop_props = dict(loop_data) if isinstance(loop_data, dict) else {}
+        loop_props.setdefault("label", loop_name)
+        # attach resolved heating curve object (full) under 'heating_curve'
+        loop_props["heating_curve"] = heating_curve_obj
+
         nodes.append({
             "id": loop_id,
             "type": loop_type,
             "position": None,
-            "properties": {
-                "label": loop_name,
-                "ahus": len(loop_data.get("ahus", [])),
-                "boilers": len(loop_data.get("boilers", [])),
-                "downstream_loops": len(loop_data.get("downstream_loops", [])),
-                "heating_curves": len(loop_data.get("heating_curves", [])),
-                "heating_curve": heating_curve_obj
-            }
+            "properties": loop_props
         })
         
         # Connect to parent
@@ -393,7 +373,64 @@ def process_yaml_to_graph(yaml_data: Dict) -> Dict:
                 downstream_loop = loop_by_id.get(downstream_id)
                 if downstream_loop:
                     process_loop(downstream_id, downstream_loop, loop_id, child_type)
-        
+
+        # Create and attach AHU nodes for AHUs referenced by this loop
+        for ahu_id in loop_data.get("ahus", []):
+            ahu_obj = ahu_by_id.get(ahu_id)
+            if not ahu_obj:
+                continue
+
+            # Avoid duplicate AHU nodes
+            if any(n["id"] == ahu_id for n in nodes):
+                # ensure an edge exists from loop to AHU
+                edge_id = f"e-{loop_id}-{ahu_id}"
+                if not any(e["id"] == edge_id for e in edges):
+                    edges.append({
+                        "id": edge_id,
+                        "source": loop_id,
+                        "target": ahu_id,
+                        "sourceHandle": "bottom",
+                        "targetHandle": "top"
+                    })
+                continue
+
+            # Resolve AHU heating curve if present (attach full curve object if available)
+            ahu_curve = None
+            ahu_curve_id = ahu_obj.get("heating_curve") or ahu_obj.get("heating_curves")
+            if isinstance(ahu_curve_id, list):
+                if len(ahu_curve_id) > 0:
+                    ahu_curve_id = ahu_curve_id[0]
+                else:
+                    ahu_curve_id = None
+
+            if ahu_curve_id:
+                curve = curve_by_id.get(ahu_curve_id)
+                if curve:
+                    ahu_curve = dict(curve)
+
+            # Create AHU node with full AHU properties from YAML so UI can render all fields
+            ahu_props = dict(ahu_obj) if isinstance(ahu_obj, dict) else {}
+            ahu_props.setdefault("label", ahu_obj.get("name") or ahu_obj.get("identifier") or ahu_id)
+            # attach resolved heating curve object (full) under 'heating_curve'
+            ahu_props["heating_curve"] = ahu_curve
+            ahu_props["parentLoopType"] = loop_type
+
+            nodes.append({
+                "id": ahu_id,
+                "type": "ahu",
+                "position": None,
+                "properties": ahu_props
+            })
+
+            # Connect AHU to loop
+            edges.append({
+                "id": f"e-{loop_id}-{ahu_id}",
+                "source": loop_id,
+                "target": ahu_id,
+                "sourceHandle": "bottom",
+                "targetHandle": "top"
+            })
+
         # Heating curve is already attached to the loop node properties by `process_loop`
     
     # Find and process primary loops

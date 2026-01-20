@@ -83,6 +83,32 @@
   background: #e2e8f0;
 }
 
+/* AHU icon in top-right */
+.base-node__icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.9);
+  border-radius: 6px;
+  border: 1px solid rgba(15,23,42,0.06);
+  z-index: 8;
+}
+
+.base-node--ahu .base-node__icon svg {
+  display: block;
+}
+
+.base-node__icon img {
+  width: 26px;
+  height: 26px;
+  display: block;
+}
+
 .base-node__label {
   font-weight: 600;
   font-size: 14px;

@@ -152,6 +152,7 @@ const getNodeSize = (type) => {
     'primary-chw': { width: 190, height: 110 },
     'secondary-hw': { width: 160, height: 90 },
     'secondary-chw': { width: 160, height: 90 },
+      ahu: { width: 160, height: 90 },
     'tertiary-hw': { width: 135, height: 75 },
     'tertiary-chw': { width: 135, height: 75 },
     sensor: { width: 95, height: 60 }
