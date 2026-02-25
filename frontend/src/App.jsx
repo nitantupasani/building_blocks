@@ -1298,6 +1298,9 @@ function FlowCanvas() {
     [nodes]
   );
 
+
+  // (Removed: Pan/zoom to selected node. Selecting a block will no longer change the viewport.)
+
   useEffect(() => {
     if (selectedNode) {
       setIsPanelCollapsed(false);
@@ -1356,7 +1359,7 @@ function FlowCanvas() {
     const handleResize = () => computePositions();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [addCollapsed, wrapperRef, addButtonsRef, nodes, ahuRef, hwRef, chwRef, ahuCollapsed, hwCollapsed, chwCollapsed]);
+  }, [addCollapsed, wrapperRef, addButtonsRef, ahuCollapsed, hwCollapsed, chwCollapsed]);
 
   useEffect(() => {
     if (!selectedNode || selectedNode.id !== selectedHeatingCurve?.parentId) {
@@ -1702,14 +1705,19 @@ function FlowCanvas() {
           elementsSelectable={true}
           reconnectRadius={20}
           deleteKeyCode={['Backspace', 'Delete']}
-          minZoom={0.005}
-          maxZoom={30}
-          fitView
-          fitViewOptions={{ padding: 0.2 }}
+          minZoom={selectedNode ? 1 : 0.005}
+          maxZoom={selectedNode ? 1 : 30}
+          zoomOnScroll={!selectedNode}
+          zoomOnPinch={!selectedNode}
+          zoomOnDoubleClick={!selectedNode}
+          panOnScroll={!selectedNode}
+          panOnDrag={!selectedNode}
+          draggable={true}
+          fitView={false}
         >
           <Background gap={24} size={1} color="#e6e8eb" />
-          <MiniMap pannable zoomable className="app__minimap" />
-          <Controls />
+          <MiniMap pannable={!selectedNode} zoomable={!selectedNode} className="app__minimap" />
+          {/* <Controls /> */}
         </ReactFlow>
         {contextMenu ? (
           <div

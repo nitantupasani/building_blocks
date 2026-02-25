@@ -1,0 +1,1258 @@
+building:
+  ahus:
+  - compensation: []
+    control_type: SupplyHeatingCurve
+    cooling_configuration: Neutral
+    cooling_valve: 21610e37-2060-4f84-97cc-b7198e8ad9e5
+    economizer: null
+    heat_pumps: []
+    heat_recovery_wheel: null
+    heating_configuration: Neutral
+    heating_curve: a768cc62-2bba-4c05-9575-fed87e1c46e6
+    heating_valve: ea87274b-8081-46f7-8171-45255c212673 
+    identifier: adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    name: AirDistribution_AHU_A/B/C/D
+    pid_controller: null
+    return_temp_compensation_factor: null
+    return_temperature: d9e71488-055d-444e-a4e4-1cc6c7be892d
+    schedule: null
+    settings:
+      ignore_requests: 2
+      ignore_seasonal_max: false
+      ignore_seasonal_min: false
+      response_max: 0.65
+      response_step: 0.25
+      seasonal_limits_factor: 1.0
+      trim_step: 0.2
+    supply_fan: e81ad50e-d0f0-4667-a35f-7b4cce2dc176
+    supply_temperature: f1869f6f-f744-4564-b103-97be79417b99
+  - compensation: []
+    control_type: SupplyMinMax
+    cooling_configuration: Intensive
+    cooling_valve: bfd1c372-c9bd-4aee-9053-2dee1fa87be2
+    economizer: null
+    heat_pumps: []
+    heat_recovery_wheel:
+      identifier: 888cac24-b475-4c8f-a5d3-e1cc534a93af
+      position: 225059f2-13c4-4ffc-bcf6-69a3eed95f6f
+    heating_configuration: Intensive
+    heating_curve: c0b11d21-4ef6-4abf-b9ba-d88bc53f260e
+    heating_valve: 40ec085e-fec1-42c9-b9cc-bcbd1f78633a
+    identifier: f85f55c4-052a-4a0a-acd0-a8b59507fa51
+    name: AirDistribution_AHU_2 Atrium
+    pid_controller: e89c5259-684a-4321-80e7-2b3be4cc9bee
+    return_temp_compensation_factor: null
+    return_temperature: e1760851-d40a-46f8-aa41-649f39bffafc
+    schedule: null
+    settings:
+      ignore_requests: 2
+      ignore_seasonal_max: false
+      ignore_seasonal_min: false
+      response_max: 0.65
+      response_step: 0.25
+      seasonal_limits_factor: 1.0
+      trim_step: 0.2
+    supply_fan: 079a119e-27e4-42bf-bd5b-5c221ceaa11e
+    supply_temperature: c45e66a6-4070-41ea-9979-3c27cea9b855
+  - compensation: []
+    control_type: SupplyHeatingCurve
+    cooling_configuration: Neutral
+    cooling_valve: 02296ebd-2070-4105-a927-bb4cd233ff56
+    economizer: null
+    heat_pumps: []
+    heat_recovery_wheel:
+      identifier: 8d3bf20a-f3c1-45c6-ac98-4e036e140647
+      position: c5819aad-fa3c-4862-bd24-bf024d26075d
+    heating_configuration: Neutral
+    heating_curve: 2068a5b4-4a5e-4938-bd82-f820c21bcc93
+    heating_valve: c741074a-0321-4ba7-9eaa-ba57c2ebda06
+    identifier: 61dc87d7-9a23-44d9-ae53-7c7c57f49a87
+    name: AirDistribution_AHU_3
+    pid_controller: null
+    return_temp_compensation_factor: null
+    return_temperature: 2dd4e25e-fc8d-469d-9e81-4a8279f63772
+    schedule: null
+    settings:
+      ignore_requests: 2
+      ignore_seasonal_max: false
+      ignore_seasonal_min: false
+      response_max: 0.65
+      response_step: 0.25
+      seasonal_limits_factor: 1.0
+      trim_step: 0.2
+    supply_fan: 3d6d1404-1b05-464d-92e8-289fc9e4935f
+    supply_temperature: 3cbb4c9e-f3af-41a5-8b1f-96553012c782
+  - compensation: []
+    control_type: SupplyHeatingCurve
+    cooling_configuration: Neutral
+    cooling_valve: c2095a48-0307-49f0-a114-6c4d8725d345
+    economizer: null
+    heat_pumps: []
+    heat_recovery_wheel:
+      identifier: 45313a17-cca7-4559-b6de-4c5e579a0672
+      position: 9a921a3f-fdd8-4034-af1a-84264eb4cacd
+    heating_configuration: Neutral
+    heating_curve: 280c22a4-e24d-42e5-bcff-122669193a75
+    heating_valve: 6b3bb1b1-c81c-443c-9546-60a654c687df
+    identifier: 9432a105-93c8-4502-8a05-e67d8f55e7cc
+    name: AirDistribution_AHU_4
+    pid_controller: null
+    return_temp_compensation_factor: null
+    return_temperature: 5f487814-7b66-4944-94b7-80859533aef2
+    schedule: null
+    settings:
+      ignore_requests: 2
+      ignore_seasonal_max: false
+      ignore_seasonal_min: false
+      response_max: 0.65
+      response_step: 0.25
+      seasonal_limits_factor: 1.0
+      trim_step: 0.2
+    supply_fan: a3f6a5b4-1d01-483a-8ffc-4636636e6963
+    supply_temperature: 439cb598-b5bb-4ce4-a267-54bb7de5db09
+  air_loops:
+  - ahus:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    - f85f55c4-052a-4a0a-acd0-a8b59507fa51
+    - 61dc87d7-9a23-44d9-ae53-7c7c57f49a87
+    - 9432a105-93c8-4502-8a05-e67d8f55e7cc
+    downstream_loops: []
+    identifier: 4e37ee07-6b71-4d93-a43f-ff551265e2de
+    name: Primary_AirLoop
+    primary: true
+  chilled_water_loops:
+  - ahus:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    - f85f55c4-052a-4a0a-acd0-a8b59507fa51
+    - 61dc87d7-9a23-44d9-ae53-7c7c57f49a87
+    - 9432a105-93c8-4502-8a05-e67d8f55e7cc
+    chillers: []
+    downstream_loops:
+    - b37e78c7-0f68-49c2-ac35-89938a0ba1ed
+    heating_curves: []
+    identifier: 354fd48b-f5a7-4e06-9166-4e1268f763e4
+    name: PrimaryCHW_Chiller_Main
+    primary: true
+  - ahus: []
+    chillers: []
+    downstream_loops: []
+    heating_curves:
+    - ec601590-a066-483f-a040-be41e475a012
+    identifier: b37e78c7-0f68-49c2-ac35-89938a0ba1ed
+    name: SecondaryCHW_InductionUnit_Main
+    primary: false
+  cold_water_loops:
+  - ahus:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    calculated_supply_temp: fcef3853-9a61-4c29-89ca-7b136b7c14f0
+    chillers: []
+    cooling_demand_percent: null
+    disengage_control_actions:
+    - field: presentValue
+      new_value: 5
+      register: fd9b7f1e-c50d-4542-a325-02946dd5b983
+      type: control_action
+    - field: presentValue
+      new_value: 0
+      register: a204ed27-ef72-4e12-b2af-4f4745277ab5
+      type: control_action
+    engage_control_actions:
+    - field: presentValue
+      new_value: 0
+      register: fd9b7f1e-c50d-4542-a325-02946dd5b983
+      type: control_action
+    - field: presentValue
+      new_value: -1
+      register: a204ed27-ef72-4e12-b2af-4f4745277ab5
+      type: control_action
+    max_requests_per_sensor: 2
+    outside_air_temperature: d151a2cf-89f3-49d4-a57c-e01a9f89c67d
+    return_temp: ae89b78f-d4ad-4d50-8818-19959ceacdd8
+    secondary_cold_water:
+      heating_curves:
+      - ec1ff1b9-9965-405b-ade7-0a3979aeb3a4
+    supply_temp: 4496d511-be2c-4729-8bd4-8788d5a1a974
+  controllers:
+  - air_loops:
+    - 8b0f6557-f83a-4bc4-bbb3-3fe287cdb6ca
+    chilled_water_loops:
+    - 354fd48b-f5a7-4e06-9166-4e1268f763e4
+    - b37e78c7-0f68-49c2-ac35-89938a0ba1ed
+    hot_water_loops:
+    - 39665aad-a1f9-4dce-9e6a-7d2ebebee719
+    - 28a20041-3d7f-4e3b-9d1c-1f292d0246db
+    identifier: 7ed726db-a6ab-459a-8bfd-f64e238d9746
+    name: '1'
+  - air_loops:
+    - 8b0f6557-f83a-4bc4-bbb3-3fe287cdb6ca
+    chilled_water_loops:
+    - 354fd48b-f5a7-4e06-9166-4e1268f763e4
+    hot_water_loops:
+    - bd91d7b5-a7d6-4b1f-8aec-1b25f9e5e4c3
+    identifier: 47994de8-3a5a-4b16-8c8a-93338682a5de
+    name: '2'
+  economizers: []
+  heat_pumps: []
+  heating_curves:
+  - X1: 831f7a18-b063-4c24-8f8b-1df82a01b1ad
+    X2: c549dd01-6171-4206-9674-80f3a65ccb6c
+    Y1: a32ca39d-d738-4af2-a8eb-cb6e11e1168f
+    Y2: 7d571a20-b20d-463d-a4fd-f8008aaf67be
+    calculated_supply_temp: 57492360-4be8-4637-9a1e-571863dfca74
+    compensation: []
+    equipment: []
+    identifier: a768cc62-2bba-4c05-9575-fed87e1c46e6
+    maximum: 27839247-986c-4951-87a5-035861869bd3
+    minimum: 3df81fb8-777d-44ec-91da-cb0c8715533a
+    name: Heating Curve.AirDistribution_AHU_A/B/C/D
+    outside_temp_register: 137f25a9-d421-4e2c-94c0-cf04ad967d6d
+    pump_status: null
+    schedule: null
+    sensors:
+    - location: C.4.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp1398 
+    - location: B.5.O.unknown.unknown
+      temperature_register: merin_flight-forum_temp1541 
+    - location: A.3.N.unknown.unknown
+      temperature_register: merin_flight-forum_temp169  
+    - location: C.1.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp1763 
+    - location: D.1.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp1764 
+    - location: C.5.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp2054 
+    - location: A.0.NW.unknown.unknown
+      temperature_register: merin_flight-forum_temp232  
+    - location: B.5.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp3021 
+    - location: D.0.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp322  
+    - location: D.2.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp3579 
+    - location: B.3.0.unknown.unknown
+      temperature_register: merin_flight-forum_temp4010 
+    - location: C.2.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp567  
+    # - location: B.0.O.unknown.unknown
+    #   temperature_register: merin_flight-forum_temp642  
+    - location: B.1.O.unknown.unknown
+      temperature_register: merin_flight-forum_temp658  
+    - location: D.5.ZW.unknown.unknown
+      temperature_register: merin_flight-forum_temp858  
+    - location: A.0.N.unknown.unknown
+      temperature_register: merin_flight-forum_temp920
+    - location: unknown.unknown.unknown.unknown.AHU_A/B/C/D
+      temperature_register: e246e1fd-139c-4fa2-840d-0d27a401ba57
+    settings:
+      ignore_requests: 0
+      seasonal_max_factor: 0.925
+      seasonal_min_factor: 0.925
+      sensor_to_ignore_request_ratio: 0.2
+    supply_temperature: f1869f6f-f744-4564-b103-97be79417b99
+    type: TwoPointHeatingCurve
+    valves: []
+  - X1: null
+    X2: null
+    Y1: null
+    Y2: null
+    calculated_supply_temp: 6766ce36-e508-4098-8abe-b4db368d42da
+    compensation: []
+    equipment: []
+    identifier: c0b11d21-4ef6-4abf-b9ba-d88bc53f260e
+    maximum: e6a880f8-6ebd-424d-822a-04df2c04bc15
+    minimum: 759754dd-32a5-479f-8b82-e673508ba9d8
+    name: Heating Curve.AirDistribution_AHU_2 Atrium
+    outside_temp_register: 137f25a9-d421-4e2c-94c0-cf04ad967d6d
+    pump_status: null
+    schedule: null
+    sensors:
+    - location: C.4.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp1398 
+    - location: B.5.O.unknown.unknown
+      temperature_register: merin_flight-forum_temp1541 
+    - location: A.3.N.unknown.unknown
+      temperature_register: merin_flight-forum_temp169  
+    - location: C.1.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp1763 
+    - location: D.1.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp1764 
+    - location: C.5.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp2054 
+    - location: A.0.NW.unknown.unknown
+      temperature_register: merin_flight-forum_temp232  
+    - location: B.5.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp3021 
+    - location: D.0.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp322  
+    - location: D.2.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp3579 
+    - location: B.3.0.unknown.unknown
+      temperature_register: merin_flight-forum_temp4010 
+    - location: C.2.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp567  
+    # - location: B.0.O.unknown.unknown
+    #   temperature_register: merin_flight-forum_temp642  
+    - location: B.1.O.unknown.unknown
+      temperature_register: merin_flight-forum_temp658  
+    - location: D.5.ZW.unknown.unknown
+      temperature_register: merin_flight-forum_temp858  
+    - location: A.0.N.unknown.unknown
+      temperature_register: merin_flight-forum_temp920
+    settings:
+      ignore_requests: 0
+      seasonal_max_factor: 1.0
+      seasonal_min_factor: 1.0
+      sensor_to_ignore_request_ratio: 0.2
+    supply_temperature: c45e66a6-4070-41ea-9979-3c27cea9b855
+    type: TwoPointHeatingCurve
+    valves: []
+  - X1: 98684106-ed1d-497c-a6fb-0a0fea9bce9d
+    X2: 1c34896d-496a-462f-96bf-f6d0c06c7484
+    Y1: a93d2d89-07fd-43a6-95ec-6d6fa8a84a36
+    Y2: fca7117c-4369-4588-85cf-365554b406be
+    calculated_supply_temp: 259d654e-0083-45ad-bcc6-d85a8bd34215
+    compensation: []
+    equipment: []
+    identifier: 2068a5b4-4a5e-4938-bd82-f820c21bcc93
+    maximum: 5d569b6b-8e82-49c3-ad9d-78f9013962cb
+    minimum: 23a636c7-d153-4517-adf5-3c0657463251
+    name: Heating Curve.AirDistribution_AHU_3
+    outside_temp_register: 137f25a9-d421-4e2c-94c0-cf04ad967d6d
+    pump_status: null
+    schedule: null
+    sensors:
+    - location: C.4.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp1398 
+    - location: B.5.O.unknown.unknown
+      temperature_register: merin_flight-forum_temp1541 
+    - location: A.3.N.unknown.unknown
+      temperature_register: merin_flight-forum_temp169  
+    - location: C.1.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp1763 
+    - location: D.1.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp1764 
+    - location: C.5.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp2054 
+    - location: A.0.NW.unknown.unknown
+      temperature_register: merin_flight-forum_temp232  
+    - location: B.5.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp3021 
+    - location: D.0.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp322  
+    - location: D.2.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp3579 
+    - location: B.3.0.unknown.unknown
+      temperature_register: merin_flight-forum_temp4010 
+    - location: C.2.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp567  
+    # - location: B.0.O.unknown.unknown
+    #   temperature_register: merin_flight-forum_temp642  
+    - location: B.1.O.unknown.unknown
+      temperature_register: merin_flight-forum_temp658  
+    - location: D.5.ZW.unknown.unknown
+      temperature_register: merin_flight-forum_temp858  
+    - location: A.0.N.unknown.unknown
+      temperature_register: merin_flight-forum_temp920
+    settings:
+      ignore_requests: 0
+      seasonal_max_factor: 1.0
+      seasonal_min_factor: 1.0
+      sensor_to_ignore_request_ratio: 0.2
+    supply_temperature: 3cbb4c9e-f3af-41a5-8b1f-96553012c782
+    type: TwoPointHeatingCurve
+    valves: []
+  - X1: 5cfaa173-3499-4e33-8e95-85d67b9bef84
+    X2: d9583ae2-c145-45f2-9949-f1be213e1f00
+    Y1: a3da27ff-cb2e-4362-baf8-3d372f478816
+    Y2: 7076dc6f-6eed-4612-942b-ed57623b637c
+    calculated_supply_temp: ab446799-dd16-4804-b147-bd73297a4683
+    compensation: []
+    equipment: []
+    identifier: 280c22a4-e24d-42e5-bcff-122669193a75
+    maximum: 94e618a3-8577-4cdc-ace5-f9abeeebaa5e
+    minimum: 220988de-e1ab-433a-9836-3fb5a6c8af85
+    name: Heating Curve.AirDistribution_AHU_4
+    outside_temp_register: 137f25a9-d421-4e2c-94c0-cf04ad967d6d
+    pump_status: null
+    schedule: null
+    sensors:
+    - location: C.4.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp1398 
+    - location: B.5.O.unknown.unknown
+      temperature_register: merin_flight-forum_temp1541 
+    - location: A.3.N.unknown.unknown
+      temperature_register: merin_flight-forum_temp169  
+    - location: C.1.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp1763 
+    - location: D.1.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp1764 
+    - location: C.5.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp2054 
+    - location: A.0.NW.unknown.unknown
+      temperature_register: merin_flight-forum_temp232  
+    - location: B.5.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp3021 
+    - location: D.0.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp322  
+    - location: D.2.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp3579 
+    - location: B.3.0.unknown.unknown
+      temperature_register: merin_flight-forum_temp4010 
+    - location: C.2.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp567  
+    # - location: B.0.O.unknown.unknown
+    #   temperature_register: merin_flight-forum_temp642  
+    - location: B.1.O.unknown.unknown
+      temperature_register: merin_flight-forum_temp658  
+    - location: D.5.ZW.unknown.unknown
+      temperature_register: merin_flight-forum_temp858  
+    - location: A.0.N.unknown.unknown
+      temperature_register: merin_flight-forum_temp920
+    settings:
+      ignore_requests: 0
+      seasonal_max_factor: 1.0
+      seasonal_min_factor: 1.0
+      sensor_to_ignore_request_ratio: 0.2
+    supply_temperature: 439cb598-b5bb-4ce4-a267-54bb7de5db09
+    type: TwoPointHeatingCurve
+    valves: []
+  - X1: a964d0ad-04a4-47ef-a749-0cb1c93826aa
+    X2: 7807bebd-3051-428a-b2af-899b66e81d56
+    Y1: 9a14f78f-8fdf-47ef-bedf-458c4e9d0fb7
+    Y2: b2b4224e-0b8f-43c8-8507-4c3010e8d859
+    calculated_supply_temp: b5c9e639-4c9f-4eed-95bd-cb6bbcd01421
+    compensation: []
+    equipment: []
+    identifier: da0c4d35-0d26-4ec0-a913-7c30381ee3f4
+    maximum: 5a0a827a-5284-4303-aaf6-5ca89afbf74a
+    minimum: d7d5c95a-c9cb-4443-b348-47fe67504475
+    name: Heating Curve.PrimaryHW_Boiler_Main
+    outside_temp_register: 137f25a9-d421-4e2c-94c0-cf04ad967d6d
+    pump_status: null
+    schedule: null
+    sensors:
+    - location: C.4.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp1398 
+    - location: B.5.O.unknown.unknown
+      temperature_register: merin_flight-forum_temp1541 
+    - location: A.3.N.unknown.unknown
+      temperature_register: merin_flight-forum_temp169  
+    - location: C.1.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp1763 
+    - location: D.1.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp1764 
+    - location: C.5.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp2054 
+    - location: A.0.NW.unknown.unknown
+      temperature_register: merin_flight-forum_temp232  
+    - location: B.5.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp3021 
+    - location: D.0.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp322  
+    - location: D.2.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp3579 
+    - location: B.3.0.unknown.unknown
+      temperature_register: merin_flight-forum_temp4010 
+    - location: C.2.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp567  
+    # - location: B.0.O.unknown.unknown
+    #   temperature_register: merin_flight-forum_temp642  
+    - location: B.1.O.unknown.unknown
+      temperature_register: merin_flight-forum_temp658  
+    - location: D.5.ZW.unknown.unknown
+      temperature_register: merin_flight-forum_temp858  
+    - location: A.0.N.unknown.unknown
+      temperature_register: merin_flight-forum_temp920
+    settings:
+      ignore_requests: 0
+      seasonal_max_factor: 1.0
+      seasonal_min_factor: 1.0
+      sensor_to_ignore_request_ratio: 0.1
+    supply_temperature: 5d6d097a-372f-4928-95d1-b24330f7c5dd
+    type: TwoPointHeatingCurve
+    valves: []
+  - X1: 343d7c8d-0ee7-4f31-aedd-c843005cfbb2
+    X2: 61b7c360-1b9e-4a67-b640-8d2af4199ec9
+    Y1: 3fb6fbf8-1366-4dbe-8b0a-7d4cbb5fd58a
+    Y2: 697a78ee-533b-4936-bfc5-db77bf2c248b
+    calculated_supply_temp: 9d74126e-6ac8-49f8-b0d4-a0a91c9d8d46
+    compensation: []
+    equipment: []
+    identifier: 2d6506e4-3748-4105-85b8-2972f26ca57d
+    maximum: 70c27502-cfa4-4ce7-8fb6-daabc9514943
+    minimum: 06df46a2-ce9f-4f53-b62e-8bb729c5c009
+    name: Heating Curve.PrimaryHW_Boiler_Atrium
+    outside_temp_register: 137f25a9-d421-4e2c-94c0-cf04ad967d6d
+    pump_status: null
+    schedule: null
+    sensors:
+    - location: C.4.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp1398 
+    - location: B.5.O.unknown.unknown
+      temperature_register: merin_flight-forum_temp1541 
+    - location: A.3.N.unknown.unknown
+      temperature_register: merin_flight-forum_temp169  
+    - location: C.1.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp1763 
+    - location: D.1.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp1764 
+    - location: C.5.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp2054 
+    - location: A.0.NW.unknown.unknown
+      temperature_register: merin_flight-forum_temp232  
+    - location: B.5.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp3021 
+    - location: D.0.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp322  
+    - location: D.2.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp3579 
+    - location: B.3.0.unknown.unknown
+      temperature_register: merin_flight-forum_temp4010 
+    - location: C.2.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp567  
+    # - location: B.0.O.unknown.unknown
+    #   temperature_register: merin_flight-forum_temp642  
+    - location: B.1.O.unknown.unknown
+      temperature_register: merin_flight-forum_temp658  
+    - location: D.5.ZW.unknown.unknown
+      temperature_register: merin_flight-forum_temp858  
+    - location: A.0.N.unknown.unknown
+      temperature_register: merin_flight-forum_temp920
+    settings:
+      ignore_requests: 0
+      seasonal_max_factor: 1.0
+      seasonal_min_factor: 1.0
+      sensor_to_ignore_request_ratio: 0.1
+    supply_temperature: 261957e2-02fa-4bb8-9c74-4a488b2e64ac
+    type: TwoPointHeatingCurve
+    valves: []
+  - X1: d6a31cc9-b9f7-45b7-96ab-462ad42f0a86
+    X2: b8806c52-a986-4b41-830f-d825bcf11843
+    X3: cd7b49d7-3b7a-40ad-8362-a2466b43ba3d
+    Y1: 08495b66-c447-49e0-83d7-fd929142d2de
+    Y2: 5d7dfc39-0f4d-4de5-855d-3e6d86a2f5ec
+    Y3: e0ca8505-8f47-44d8-af99-e802a6d4dac9
+    calculated_supply_temp: 1eccef09-2ddd-4e35-8b26-67c7686925dc
+    compensation: []
+    equipment:
+    - INDUCTION_UNIT
+    identifier: 30c2581a-a027-41c2-861f-aa67dd3eb620
+    maximum: be4b6718-048e-47b2-85a6-c4a4875ee8d2
+    minimum: 1d3e0bf6-5dec-46aa-ab50-b20730a2f34d
+    name: Heating Curve.SecondaryHW_InductionUnit_Main
+    outside_temp_register: 137f25a9-d421-4e2c-94c0-cf04ad967d6d
+    pump_status: cb8ba96f-1095-4e42-8eec-9d43393d0b16
+    schedule: null
+    sensors:
+    - location: C.4.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp1398 
+    - location: B.5.O.unknown.unknown
+      temperature_register: merin_flight-forum_temp1541 
+    - location: A.3.N.unknown.unknown
+      temperature_register: merin_flight-forum_temp169  
+    - location: C.1.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp1763 
+    - location: D.1.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp1764 
+    - location: C.5.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp2054 
+    - location: A.0.NW.unknown.unknown
+      temperature_register: merin_flight-forum_temp232  
+    - location: B.5.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp3021 
+    - location: D.0.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp322  
+    - location: D.2.Z.unknown.unknown
+      temperature_register: merin_flight-forum_temp3579 
+    - location: B.3.0.unknown.unknown
+      temperature_register: merin_flight-forum_temp4010 
+    - location: C.2.W.unknown.unknown
+      temperature_register: merin_flight-forum_temp567  
+    # - location: B.0.O.unknown.unknown
+    #   temperature_register: merin_flight-forum_temp642  
+    - location: B.1.O.unknown.unknown
+      temperature_register: merin_flight-forum_temp658  
+    - location: D.5.ZW.unknown.unknown
+      temperature_register: merin_flight-forum_temp858  
+    - location: A.0.N.unknown.unknown
+      temperature_register: merin_flight-forum_temp920
+    - location: unknown.unknown.unknown.unknown.InductionUnit_Main
+      temperature_register: e68b4495-3ef4-4063-a062-391c1a7a5173
+    settings:
+      ignore_requests: 0
+      seasonal_max_factor: 0.90
+      seasonal_min_factor: 1.0
+      sensor_to_ignore_request_ratio: 0.1
+    supply_temperature: ccd422ac-a2dc-45e6-b19d-1c8f850b4b9d
+    type: ThreePointHeatingCurve
+    valve_position: d6c75d3a-6da2-4104-a2f8-a1185fe32ff4
+    valves: []
+  - X1: 0b560bc0-fc1a-4edd-9b38-534352042622
+    X2: b3472061-52d1-48a0-83df-f017fe1c4d06
+    Y1: bd91ffc1-67d2-48ba-9f57-0c257abf0042
+    Y2: 9668cec2-4e13-443b-8f7e-5b451525d401
+    calculated_supply_temp: 1f1d22d0-d20e-4940-89b9-ec836de7fb32
+    compensation: []
+    equipment: []
+    identifier: ec601590-a066-483f-a040-be41e475a012
+    maximum: c864d65f-c623-47bc-8e13-281d708c070e
+    minimum: cf767e95-23ca-493b-8d59-a246d85fc991
+    name: Heating Curve.SecondaryCHW_InductionUnit_Main
+    outside_temp_register: 137f25a9-d421-4e2c-94c0-cf04ad967d6d
+    pump_status: 7495df27-d07c-4b5a-b3a0-e770b021a910
+    schedule: null
+    sensors: []
+    settings:
+      ignore_requests: 0
+      seasonal_max_factor: 1.0
+      seasonal_min_factor: 1.0
+      sensor_to_ignore_request_ratio: 0.1
+    supply_temperature: 61acbe24-e116-48ec-b1f9-b720409c2200
+    type: TwoPointHeatingCurve
+    valve_position: 25f38483-e3f3-4f3a-b26a-faeafaa91c0c
+    valves: []
+  hot_water_loops:
+  - ahus:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    - f85f55c4-052a-4a0a-acd0-a8b59507fa51
+    - 61dc87d7-9a23-44d9-ae53-7c7c57f49a87
+    - 9432a105-93c8-4502-8a05-e67d8f55e7cc
+    boilers: []
+    downstream_loops:
+    - 1acd8303-ea00-48c7-a979-265fb10358a9
+    - 7e67f244-ffc7-4a6b-8436-d466236a9f47
+    - 52b55041-91af-42d3-98c0-207685da1268
+    heating_curves:
+    - da0c4d35-0d26-4ec0-a913-7c30381ee3f4
+    identifier: 64bd2ae0-2b46-4895-9c1d-c31a476fe5b7
+    name: PrimaryHW_Boiler_Main
+    primary: true
+    schedule: null
+  - ahus: []
+    boilers: []
+    downstream_loops: []
+    heating_curves:
+    - 2d6506e4-3748-4105-85b8-2972f26ca57d
+    identifier: c7a0f5b5-17bc-4f96-856e-3666dfe64201
+    name: PrimaryHW_Boiler_Atrium
+    primary: true
+    schedule: null
+  - ahus: []
+    boilers: []
+    downstream_loops: []
+    heating_curves:
+    - 30c2581a-a027-41c2-861f-aa67dd3eb620
+    identifier: 1acd8303-ea00-48c7-a979-265fb10358a9
+    name: SecondaryHW_InductionUnit_Main
+    primary: false
+    schedule: null
+  - ahus: []
+    boilers: []
+    downstream_loops: []
+    heating_curves: []
+    identifier: 7e67f244-ffc7-4a6b-8436-d466236a9f47
+    name: SecondaryHW_FloorHeating_Atrium
+    primary: false
+    schedule: null
+  - ahus: []
+    boilers: []
+    downstream_loops: []
+    heating_curves: []
+    identifier: 52b55041-91af-42d3-98c0-207685da1268
+    name: SecondaryHW_TransportGroup_AHU 3/4
+    primary: false
+    schedule: null
+  meters: []
+  morning_startup_state: bb05a9a1-9728-4af1-b985-06631ed193c0
+  name: Merin Flight Forum 120 159 # No change
+  outdoor_temperature: d151a2cf-89f3-49d4-a57c-e01a9f89c67d
+  pid_controllers:
+  - identifier: e89c5259-684a-4321-80e7-2b3be4cc9bee
+    max: 6766ce36-e508-4098-8abe-b4db368d42da
+    min: 759754dd-32a5-479f-8b82-e673508ba9d8
+  schedules:
+  - controlled_system_identifiers:
+    - 1e619657-e4d5-4ee3-8ac1-54a8d143ee8b
+    register: e1e3ba08-1bc5-4781-a891-2e68e8bae87a
+    schedule_type: ahu
+  - controlled_system_identifiers:
+    - 24206949-8330-4473-9952-79e818bbc0f0
+    register: b12be9a6-73ca-4d5a-82f9-63375f0ce42f
+    schedule_type: ahu
+  - controlled_system_identifiers:
+    - 06948471-9c7e-4c82-8307-4318b1b45765
+    register: 1f2a76d4-494a-467f-b6fc-156c23c94907
+    schedule_type: ahu
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    register: 255f31b4-e1de-4b48-bc55-fd5b12ec718f
+    schedule_type: ahu
+  - controlled_system_identifiers:
+    - 3f0671db-a261-4b18-943b-47ea884c2a00
+    register: a6b8057a-69c5-4ccd-b3ae-224c15e14511
+    schedule_type: hot-water
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    register: e72a27e8-8b6a-400c-9119-8ce844b3e2d9
+    schedule_type: space
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    register: 3c708605-1546-411e-8380-d196088e861e
+    schedule_type: space
+  # - controlled_system_identifiers:
+  #   - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+  #   register: b54a58b3-7959-4a6b-a0c7-da71a9b0fc53 Floor 3D - currently empty
+  #   schedule_type: space
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    register: 729441dd-2c3d-4e46-8b43-06c2b58a3c8e
+    schedule_type: space
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    register: 053a3784-a943-4205-b381-c88b8ce0c150
+    schedule_type: space
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    register: 7fff75f9-cb24-4cee-944c-b85a298a970a
+    schedule_type: space
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    register: 17bbbe25-fb77-4bd9-a9f7-1c158b584023
+    schedule_type: space
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    register: 9aa75400-97b6-4344-b272-37b782ba1bd0
+    schedule_type: space
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    register: cf804dc7-9503-41b9-8206-eaf38075990f
+    schedule_type: space
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    register: 8538842f-ca19-497e-a7b3-bc4656019fec
+    schedule_type: space
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    register: 3658e98a-3c6b-4dbb-89f2-5e86379903b0
+    schedule_type: space
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    register: 6d854e2b-0f70-46b3-b3e8-5cc39c51314c
+    schedule_type: space
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    register: 403262cb-0659-4d8c-81ab-9f8ea33aa805
+    schedule_type: space
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    register: eaf8181f-6c12-4234-823e-0a2b0a135b68
+    schedule_type: space
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    register: 7ab32c1e-0785-41d0-b921-6a38f6755c1d
+    schedule_type: space
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    register: 46d52ed2-ddbb-44df-9df1-3e2ea9f25559
+    schedule_type: space
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    register: 0fedef0c-3f02-4dfa-9584-72bec36d6c73
+    schedule_type: space
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    register: e862c978-4d9a-407f-94ec-8c545529a5dd # A1_5
+    schedule_type: space
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3
+    register: 2c46dceb-fc18-4815-a919-27af5c3c191b # A2_5
+    schedule_type: space
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3 # B1_5
+    register: 1d7356b8-86da-4c5a-9bdd-794811ec5718
+    schedule_type: space
+  - controlled_system_identifiers:
+    - adf5de4d-5ce9-4a77-af74-4e0621568fb3 # B2_5
+    register: cb3a4aed-d7e9-4442-9594-fa493d0a598e
+    schedule_type: space
+  summer_blocking_state: d71745d0-0032-40df-9d34-641ea55cf00e
+  temperature_sensors:
+  - merin_flight-forum_temp1398 
+  - merin_flight-forum_temp1541
+  - merin_flight-forum_temp169  
+  - merin_flight-forum_temp1763 
+  - merin_flight-forum_temp1764 
+  - merin_flight-forum_temp2054
+  - merin_flight-forum_temp232  
+  - merin_flight-forum_temp3021
+  - merin_flight-forum_temp322  
+  - merin_flight-forum_temp3579 
+  - merin_flight-forum_temp4010 
+  - merin_flight-forum_temp567  
+  # - merin_flight-forum_temp642  
+  - merin_flight-forum_temp658  
+  - merin_flight-forum_temp858 
+  - merin_flight-forum_temp920  
+  - e246e1fd-139c-4fa2-840d-0d27a401ba57
+  - e68b4495-3ef4-4063-a062-391c1a7a5173
+  vavs: []
+custom_elements: {}
+nightly_reset_control_actions:
+- field: presentValue
+  new_value: -5
+  register: 831f7a18-b063-4c24-8f8b-1df82a01b1ad
+  type: control_action
+- field: presentValue
+  new_value: 23
+  register: c549dd01-6171-4206-9674-80f3a65ccb6c
+  type: control_action
+- field: presentValue
+  new_value: 20
+  register: a32ca39d-d738-4af2-a8eb-cb6e11e1168f
+  type: control_action
+- field: presentValue
+  new_value: 18
+  register: 7d571a20-b20d-463d-a4fd-f8008aaf67be
+  type: control_action
+- field: presentValue
+  new_value: -5
+  register: c9c9c7c5-849c-4330-9aa8-8bd6c3c8b4a7
+  type: control_action
+- field: presentValue
+  new_value: 23
+  register: 65ba5506-91aa-401f-8c22-c79f1e9c55b0
+  type: control_action
+- field: presentValue
+  new_value: 20
+  register: 40d0c41e-bbd5-405f-8de2-224b12992fdd
+  type: control_action
+- field: presentValue
+  new_value: 23
+  register: 0714f89d-96b5-4adb-8f59-3b7770d5c5bd
+  type: control_action
+- field: presentValue
+  new_value: -5
+  register: 98684106-ed1d-497c-a6fb-0a0fea9bce9d
+  type: control_action
+- field: presentValue
+  new_value: 23
+  register: 1c34896d-496a-462f-96bf-f6d0c06c7484
+  type: control_action
+- field: presentValue
+  new_value: 20
+  register: a93d2d89-07fd-43a6-95ec-6d6fa8a84a36
+  type: control_action
+- field: presentValue
+  new_value: 18
+  register: fca7117c-4369-4588-85cf-365554b406be
+  type: control_action
+- field: presentValue
+  new_value: -5
+  register: 5cfaa173-3499-4e33-8e95-85d67b9bef84
+  type: control_action
+- field: presentValue
+  new_value: 23
+  register: d9583ae2-c145-45f2-9949-f1be213e1f00
+  type: control_action
+- field: presentValue
+  new_value: 20
+  register: a3da27ff-cb2e-4362-baf8-3d372f478816
+  type: control_action
+- field: presentValue
+  new_value: 18
+  register: 7076dc6f-6eed-4612-942b-ed57623b637c
+  type: control_action
+- field: presentValue
+  new_value: -10
+  register: a964d0ad-04a4-47ef-a749-0cb1c93826aa
+  type: control_action
+- field: presentValue
+  new_value: 85
+  register: 7807bebd-3051-428a-b2af-899b66e81d56
+  type: control_action
+- field: presentValue
+  new_value: 20
+  register: 9a14f78f-8fdf-47ef-bedf-458c4e9d0fb7
+  type: control_action
+- field: presentValue
+  new_value: 32
+  register: b2b4224e-0b8f-43c8-8507-4c3010e8d859
+  type: control_action
+- field: presentValue
+  new_value: -5
+  register: 343d7c8d-0ee7-4f31-aedd-c843005cfbb2
+  type: control_action
+- field: presentValue
+  new_value: 80
+  register: 61b7c360-1b9e-4a67-b640-8d2af4199ec9
+  type: control_action
+- field: presentValue
+  new_value: 22
+  register: 3fb6fbf8-1366-4dbe-8b0a-7d4cbb5fd58a
+  type: control_action
+- field: presentValue
+  new_value: 20
+  register: 697a78ee-533b-4936-bfc5-db77bf2c248b
+  type: control_action
+- field: presentValue
+  new_value: -10
+  register: d6a31cc9-b9f7-45b7-96ab-462ad42f0a86
+  type: control_action
+- field: presentValue
+  new_value: -10
+  register: b8806c52-a986-4b41-830f-d825bcf11843
+  type: control_action
+- field: presentValue
+  new_value: 15
+  register: cd7b49d7-3b7a-40ad-8362-a2466b43ba3d
+  type: control_action
+- field: presentValue
+  new_value: 80
+  register: 08495b66-c447-49e0-83d7-fd929142d2de
+  type: control_action
+- field: presentValue
+  new_value: 80
+  register: 5d7dfc39-0f4d-4de5-855d-3e6d86a2f5ec
+  type: control_action
+- field: presentValue
+  new_value: 20
+  register: e0ca8505-8f47-44d8-af99-e802a6d4dac9
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: ef7e03ad-98fc-495f-8559-65fb30d3f093
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: b739f4c3-376a-4625-8949-894a9b3140b6
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 5beb418a-6642-44e4-a422-76701781149c
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 904e34b0-6e58-4ba5-be0a-645de36dfc87
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: cab37e05-a33f-4251-bb50-2df0af272e7b
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 71e5a887-0580-4e3d-acfb-703af8eb5409
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: eb46e4a3-131b-4c84-85ef-14738fec85c0
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: b1da3fa6-abb1-40c5-8aae-e6c947b7fb90
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 63a902fb-38f9-427d-9674-bfc7c8bcc088
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: e6368aa1-556c-4cf7-b50d-f5e8885e20dd
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 90055a59-24b6-4c32-85d0-b4082d15c689
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 643b04ef-1135-46c7-bd00-d704edad862c
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 3236b2f2-df50-4c24-81f6-3f1f2d661750
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: f0d1780d-0fec-4fbd-af3c-b3c0599a8e68
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 11565eb6-115a-4d10-9204-fc5026610c12
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: d875afec-9fdf-454a-8798-ad658544e255
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 443b026f-e996-4236-9152-e39d9cb2a3e4
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 4a9d4c1c-3c10-4360-8982-7f2e89cab26b
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 439d479c-78bd-44c9-b3b8-5dcb07684779
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 768d39fb-5c87-4448-9702-11520ffcc9b1
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 37dd8b24-132d-40b2-aa3b-3ac4d87ca975
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: c79e105f-e472-402b-8ade-d5130568a606
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 71547697-7d7f-4b67-94a3-ee52e1bf2ea9
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 2ac7d8d9-b65f-4b2a-98b0-494302aa804f
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: ef7e03ad-98fc-495f-8559-65fb30d3f093
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: b739f4c3-376a-4625-8949-894a9b3140b6
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 5beb418a-6642-44e4-a422-76701781149c
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 904e34b0-6e58-4ba5-be0a-645de36dfc87
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: cab37e05-a33f-4251-bb50-2df0af272e7b
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 71e5a887-0580-4e3d-acfb-703af8eb5409
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: eb46e4a3-131b-4c84-85ef-14738fec85c0
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: b1da3fa6-abb1-40c5-8aae-e6c947b7fb90
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 63a902fb-38f9-427d-9674-bfc7c8bcc088
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: e6368aa1-556c-4cf7-b50d-f5e8885e20dd
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 90055a59-24b6-4c32-85d0-b4082d15c689
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 643b04ef-1135-46c7-bd00-d704edad862c
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 3236b2f2-df50-4c24-81f6-3f1f2d661750
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: f0d1780d-0fec-4fbd-af3c-b3c0599a8e68
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 11565eb6-115a-4d10-9204-fc5026610c12
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: d875afec-9fdf-454a-8798-ad658544e255
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 443b026f-e996-4236-9152-e39d9cb2a3e4
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 4a9d4c1c-3c10-4360-8982-7f2e89cab26b
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 439d479c-78bd-44c9-b3b8-5dcb07684779
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 768d39fb-5c87-4448-9702-11520ffcc9b1
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 37dd8b24-132d-40b2-aa3b-3ac4d87ca975
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: c79e105f-e472-402b-8ade-d5130568a606
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 71547697-7d7f-4b67-94a3-ee52e1bf2ea9
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 2ac7d8d9-b65f-4b2a-98b0-494302aa804f
+  type: control_action
+- field: presentValue
+  new_value: 5
+  register: 0b560bc0-fc1a-4edd-9b38-534352042622
+  type: control_action
+- field: presentValue
+  new_value: 26
+  register: b3472061-52d1-48a0-83df-f017fe1c4d06
+  type: control_action
+- field: presentValue
+  new_value: 20
+  register: bd91ffc1-67d2-48ba-9f57-0c257abf0042
+  type: control_action
+- field: presentValue
+  new_value: 18
+  register: 9668cec2-4e13-443b-8f7e-5b451525d401
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: c6bc6398-0d71-4560-9a53-a7b38799439f
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: e49aeccb-7005-4c4b-9c34-9d94c641db7f
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: c6f943ae-c808-4171-8afd-aaea46605d7d
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: e902cd72-b753-4651-b4f3-548c1fb0fef7
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: b3a3dae3-2282-4d03-bc06-bd1fd6d4f363
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: c1919cb6-022e-4347-876f-654896646dc5
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: fe4efcee-38fc-4eb5-a283-5b9f06caab84
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 20f038a7-13e7-425c-9771-d217d6313705
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 1ba36843-c5cd-4a6e-bae3-cead9f78fb24
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 3218a9d7-0ffa-4cca-9e8d-90a56cd7b69b
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 0e38d78f-4c74-4f1c-8eba-822ce268eddc
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 647f7786-66f4-45b9-b557-8d3c1d7473f3
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 04029217-5985-4461-9bfb-8ee2fe9528bf
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: cfeb5aba-d689-4233-9c0a-f5fc07d64f75
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 9dffe85d-5230-42c8-978f-80bbafa8ab72
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: e24ed76e-ef3e-47ed-9ab0-7eda7129a136
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 4a1e9f27-9278-4a28-847e-b8ac6414afd1
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 04911120-7f81-4a42-8a4a-8363efaec6f3
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: be61d2a6-8213-494a-8d28-6db46c74e6b9
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: a2cc2196-301f-4d00-8fb6-33669041cf40
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 57e92090-743d-4a1b-9fd7-f093775adc8a
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 92c9f7ba-bf04-4c11-abf7-f19eadadc680
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 42b51956-767c-4bfa-b32d-23ad88f8c668
+  type: control_action
+- field: presentValue
+  new_value: 'null'
+  register: 482ef916-2323-4815-9061-081338db1008
+  type: control_action
+profile:
+  comfort_indoor_temp_range:
+    lower: 20.5
+    upper: 23.0
+scheduling:
+  day_schedules:
+  - identifier: 15550370-25de-44f2-a01b-0ab780f9cf70
+    periods:
+    - end_hour: 18
+      end_minute: 0
+      start_hour: 3
+      start_minute: 0
+  - identifier: 1aeca0d8-4211-40a7-b004-e66de28727b6
+    periods:
+    - end_hour: 18
+      end_minute: 0
+      start_hour: 5
+      start_minute: 30
+  - identifier: ae5e6a33-51e7-439a-9104-e519aa04c0c7
+    periods: []
+  schedules:
+    occupation: 8cb9db88-de16-4d11-b5cc-e806531d9970
+  week_schedules:
+  - friday: 1aeca0d8-4211-40a7-b004-e66de28727b6
+    identifier: 8cb9db88-de16-4d11-b5cc-e806531d9970
+    monday: 15550370-25de-44f2-a01b-0ab780f9cf70
+    saturday: ae5e6a33-51e7-439a-9104-e519aa04c0c7
+    sunday: ae5e6a33-51e7-439a-9104-e519aa04c0c7
+    thursday: 1aeca0d8-4211-40a7-b004-e66de28727b6
+    tuesday: 1aeca0d8-4211-40a7-b004-e66de28727b6
+    wednesday: 1aeca0d8-4211-40a7-b004-e66de28727b6
+settings:
+  max_requests_per_sensor: 2
+  use_motion_data: false

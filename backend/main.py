@@ -69,7 +69,22 @@ def load_graph() -> Dict:
 
 def save_graph(data: Dict):
     """Save graph data to storage"""
+
     STORAGE_FILE.write_text(json.dumps(data, indent=2))
+
+# Utility to sanitize NaN/Infinity values for JSON
+import math
+def sanitize_for_json(obj):
+    if isinstance(obj, dict):
+        return {k: sanitize_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize_for_json(v) for v in obj]
+    elif isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+        return obj
+    else:
+        return obj
 
 
 # API Endpoints
@@ -82,13 +97,14 @@ async def root():
 async def get_graph():
     """Get the entire graph (nodes and edges)"""
     data = load_graph()
-    return data
+    safe_data = sanitize_for_json(data)
+    return safe_data
 
 
 @app.post("/api/graph")
 async def update_graph(graph: GraphData):
     """Replace the entire graph"""
-    save_graph(graph.dict())
+    save_graph(graph.model_dump())
     return {"message": "Graph updated successfully"}
 
 
@@ -108,7 +124,7 @@ async def create_node(node: NodeCreate):
     if any(n["id"] == node.id for n in data["nodes"]):
         raise HTTPException(status_code=400, detail="Node ID already exists")
     
-    node_data = node.dict()
+    node_data = node.model_dump()
     data["nodes"].append(node_data)
     save_graph(data)
     
@@ -191,7 +207,7 @@ async def create_edge(edge: EdgeCreate):
     if any(e["id"] == edge.id for e in data["edges"]):
         raise HTTPException(status_code=400, detail="Edge ID already exists")
     
-    edge_data = edge.dict()
+    edge_data = edge.model_dump()
     data["edges"].append(edge_data)
     save_graph(data)
     
@@ -463,11 +479,12 @@ async def import_yaml(file: UploadFile = File(...)):
         # Save to storage
         save_graph(graph_data)
         
+        safe_graph_data = sanitize_for_json(graph_data)
         return {
             "message": "YAML imported successfully",
             "nodes_count": len(graph_data["nodes"]),
             "edges_count": len(graph_data["edges"]),
-            "graph": graph_data
+            "graph": safe_graph_data
         }
     except yaml.YAMLError as e:
         raise HTTPException(status_code=400, detail=f"Invalid YAML: {str(e)}")
@@ -495,11 +512,12 @@ async def import_yaml_from_file(filepath: str):
         # Save to storage
         save_graph(graph_data)
         
+        safe_graph_data = sanitize_for_json(graph_data)
         return {
             "message": f"YAML imported successfully from {filepath}",
             "nodes_count": len(graph_data["nodes"]),
             "edges_count": len(graph_data["edges"]),
-            "graph": graph_data
+            "graph": safe_graph_data
         }
     except yaml.YAMLError as e:
         raise HTTPException(status_code=400, detail=f"Invalid YAML: {str(e)}")
